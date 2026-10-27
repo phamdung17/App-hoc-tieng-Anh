@@ -71,12 +71,20 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # ── Exception Handlers ────────────────────────────────────────────────
+    from app.core.errors import register_exception_handlers
+    register_exception_handlers(app)
+
     # ── Routers ───────────────────────────────────────────────────────────
     from app.modules.auth.router import router as auth_router
     from app.modules.scan.router import router as scan_router
+    from app.modules.users.router import router as users_router
+    from app.modules.vocab.router import router as vocab_router
 
     app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
     app.include_router(scan_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(users_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(vocab_router, prefix=settings.API_V1_PREFIX)
 
     # ── Health check ──────────────────────────────────────────────────────
     @app.get("/health", tags=["system"], summary="Health check")
