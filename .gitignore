@@ -1,0 +1,38 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.jks
+*.keystore
+
+# Flutter / Dart generated files
+app_hoc_tieng_anh/.dart_tool/
+app_hoc_tieng_anh/build/
+app_hoc_tieng_anh/.flutter-plugins-dependencies
+app_hoc_tieng_anh/android/.gradle/
+app_hoc_tieng_anh/android/.kotlin/
+app_hoc_tieng_anh/android/local.properties
+app_hoc_tieng_anh/ios/Flutter/Generated.xcconfig
+app_hoc_tieng_anh/ios/Flutter/flutter_export_environment.sh
+
+# Python generated files / environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / OS / logs / local data
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+postgres_data/

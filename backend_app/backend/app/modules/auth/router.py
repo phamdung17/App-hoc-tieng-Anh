@@ -1,0 +1,174 @@
+"""
+app/modules/auth/router.py
+
+FastAPI router cho auth module.
+Endpoints:
+  POST /auth/register       — Tạo tài khoản mới
+  POST /auth/login          — Đăng nhập, nhận token pair
+  POST /auth/refresh        — Làm mới access token
+  POST /auth/verify-email   — Xác minh email bằng token
+  POST /auth/resend-verify  — Gửi lại email xác minh
+  GET  /auth/me             — Thông tin user hiện tại
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.deps.auth import get_current_user
+from app.core.models.user import User
+
+from .errors import (
+    AuthDomainError,
+    EmailAlreadyRegisteredError,
+    EmailAlreadyVerifiedError,
+    InvalidCredentialsError,
+    InvalidVerifyTokenError,
+    UserNotFoundError,
+)
+from .schemas import (
+    AuthResponse,
+    LoginRequest,
+    MessageResponse,
+    RefreshRequest,
+    RegisterRequest,
+    ResendVerifyRequest,
+    TokenResponse,
+    UserResponse,
+    VerifyEmailRequest,
+)
+from .service import AuthService
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# ── Dependency ────────────────────────────────────────────────────────────────
+
+def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
+    return AuthService(db=db)
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/register",
+    response_model=AuthResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Đăng ký tài khoản mới",
+)
+async def register(
+    body: RegisterRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> AuthResponse:
+    """
+    Tạo tài khoản mới và gửi email xác minh.
+    Trả token pair ngay để FE có thể bắt đầu dùng app.
+    """
+    try:
+        return await service.register(
+            email=body.email,
+            password=body.password,
+            display_name=body.display_name,
+        )
+    except EmailAlreadyRegisteredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
+
+
+@router.post(
+    "/login",
+    response_model=AuthResponse,
+    summary="Đăng nhập",
+)
+async def login(
+    body: LoginRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> AuthResponse:
+    """Xác thực credentials, trả access + refresh token."""
+    try:
+        return await service.login(email=body.email, password=body.password)
+    except InvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": exc.code, "message": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    summary="Làm mới access token",
+)
+async def refresh(
+    body: RefreshRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> TokenResponse:
+    """Dùng refresh token để lấy access token mới (token rotation)."""
+    try:
+        return await service.refresh(body.refresh_token)
+    except InvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_REFRESH_TOKEN", "message": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+
+@router.post(
+    "/verify-email",
+    response_model=MessageResponse,
+    summary="Xác minh email",
+)
+async def verify_email(
+    body: VerifyEmailRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> MessageResponse:
+    """Xác minh email bằng token gửi qua email."""
+    try:
+        await service.verify_email(body.token)
+        return MessageResponse(message="Email verified successfully")
+    except EmailAlreadyVerifiedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
+    except InvalidVerifyTokenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
+
+
+@router.post(
+    "/resend-verify",
+    response_model=MessageResponse,
+    summary="Gửi lại email xác minh",
+)
+async def resend_verify(
+    body: ResendVerifyRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> MessageResponse:
+    """Gửi lại email xác minh (khi token cũ đã hết hạn)."""
+    try:
+        await service.resend_verify(body.email)
+        return MessageResponse(message="Verification email sent")
+    except (UserNotFoundError, EmailAlreadyVerifiedError) as exc:
+        # Không tiết lộ user có tồn tại không — trả message thống nhất
+        return MessageResponse(message="If the email exists, a verification email has been sent")
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Thông tin user hiện tại",
+)
+async def get_me(
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    """Trả thông tin profile của user đang đăng nhập."""
+    return UserResponse.model_validate(current_user)
