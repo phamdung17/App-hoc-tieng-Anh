@@ -12,6 +12,8 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
+import '../features/challenge/presentation/pages/daily_challenge_page.dart';
+import '../features/learning/presentation/pages/learning_page.dart';
 
 // ── Route names (constants để tránh typo) ────────────────────────────────────
 
@@ -25,6 +27,7 @@ class AppRoutes {
   static const verifyEmail = '/verify-email';
   static const home = '/home';
   static const learning = '/home/learning';
+  static const dailyChallenge = '/daily-challenge';
   static const vocabulary = '/home/vocabulary';
   static const review = '/home/review';
   static const profile = '/home/profile';
@@ -117,6 +120,12 @@ GoRouter createRouter() {
         builder: (context, state) => const _PlaceholderPage(title: 'AI Scan'),
       ),
 
+      GoRoute(
+        path: AppRoutes.dailyChallenge,
+        name: 'dailyChallenge',
+        builder: (context, state) => const DailyChallengePage(),
+      ),
+
       // Word detail
       GoRoute(
         path: AppRoutes.wordDetail,
@@ -144,8 +153,9 @@ GoRouter createRouter() {
           GoRoute(
             path: AppRoutes.learning,
             name: 'learning',
-            builder: (context, state) =>
-                const _PlaceholderPage(title: 'Lộ trình học'),
+            builder: (context, state) => LearningPage(
+              onStartChallenge: () => context.push(AppRoutes.dailyChallenge),
+            ),
           ),
           GoRoute(
             path: AppRoutes.vocabulary,
