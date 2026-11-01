@@ -39,12 +39,6 @@ from app.integrations.gemini import (
     GeminiUnavailableError,
     DetectedObject,
 )
-from app.integrations.storage import StorageClient
-from app.integrations.storage.errors import (
-    StorageDeleteError,
-    StoragePresignError,
-    StorageUploadError,
-)
 
 from .errors import (
     AITemporarilyUnavailableError,
@@ -78,7 +72,9 @@ class ScanService:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
         self._gemini = GeminiClient()
-        self._storage = StorageClient()
+        # TODO (Ngày 4 sau): inject StorageClient, RedisClient
+        # self._storage = StorageClient()
+        # self._redis = redis_client
 
     # ── Public Methods ────────────────────────────────────────────────────
 
@@ -104,28 +100,10 @@ class ScanService:
 
         # ── Step 4: Upload ảnh vào storage ───────────────────────────────
         image_key = await self._upload_image(user_id, processed_bytes, mime_type)
-        try:
-            return await self._process_uploaded_image(
-                user_id, image_key, processed_bytes, mime_type
-            )
-        except Exception:
-            try:
-                await self._storage.delete(image_key)
-            except StorageDeleteError:
-                logger.exception("Failed to clean up scan image: key=%s", image_key)
-            raise
-
-    async def _process_uploaded_image(
-        self,
-        user_id: uuid.UUID,
-        image_key: str,
-        image_bytes: bytes,
-        mime_type: str,
-    ) -> ScanResponse:
-        image_url = await self._get_presigned_url(image_key)
+        image_url = self._get_presigned_url(image_key)
 
         # ── Step 5: Gọi Gemini API ────────────────────────────────────────
-        detected_objects = await self._call_gemini(image_bytes, mime_type)
+        detected_objects = await self._call_gemini(processed_bytes, mime_type)
 
         # Không có vật thể → trả no_object, không trừ quota
         if not detected_objects:
@@ -147,22 +125,6 @@ class ScanService:
 
         # ── Step 6: Filter + dedupe + limit ──────────────────────────────
         filtered = self._filter_and_dedupe(detected_objects)
-        if not filtered:
-            scan = await self._save_scan(
-                user_id=user_id,
-                image_key=image_key,
-                mime_type=mime_type,
-                status="no_object",
-                items_data=[],
-            )
-            return ScanResponse(
-                id=scan.id,
-                status="no_object",
-                image_url=image_url,
-                items=[],
-                object_count=0,
-                created_at=scan.created_at,
-            )
 
         # ── Step 7: Tra catalog, cache nếu chưa có ────────────────────────
         items_with_word_ids = await self._resolve_word_catalog(filtered)
@@ -175,9 +137,24 @@ class ScanService:
             status="ok",
             items_data=items_with_word_ids,
         )
+        # TODO: tăng quota Redis sau khi lưu thành công
+        # await self._increment_quota(user_id)
 
         # ── Xây dựng response ─────────────────────────────────────────────
         return self._build_response(scan, image_url)
+
+    async def get_quota(self, user_id: uuid.UUID) -> dict:
+        """Trả về quota scan hiện tại của user (từ Redis)."""
+        # TODO: đọc từ Redis
+        # used = await self._redis.get(f"scan_quota:{user_id}:{today()}")
+        limit = settings.SCAN_QUOTA_PER_USER_DAILY
+        used = 0   # placeholder
+        return {
+            "used": used,
+            "limit": limit,
+            "remaining": max(0, limit - used),
+            "reset_at": _midnight_utc_iso(),
+        }
 
     # ── Private Helpers ───────────────────────────────────────────────────
 
@@ -227,32 +204,19 @@ class ScanService:
         self, user_id: uuid.UUID, image_bytes: bytes, mime_type: str
     ) -> str:
         """
-        Upload ảnh lên S3/R2 private bucket.
-        Trả về object key (lưu vào DB — không bao giờ lưu presigned URL).
-
-        Raises:
-            ScanFailedError: Nếu upload thất bại.
+        Upload ảnh lên storage. Trả về storage key.
+        TODO: Implement thật với boto3/S3 client.
         """
-        try:
-            key = await self._storage.upload_scan(user_id, image_bytes, mime_type)
-        except StorageUploadError as exc:
-            logger.error("Storage upload failed: %s", exc)
-            raise ScanFailedError("STORAGE_UPLOAD_FAILED") from exc
+        # Placeholder — sẽ implement với StorageClient
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        key = f"scans/{user_id}/{timestamp}_{uuid.uuid4().hex[:8]}.jpg"
+        logger.debug("TODO: upload image to storage key=%s", key)
         return key
 
-    async def _get_presigned_url(self, image_key: str) -> str:
-        """
-        Tạo presigned GET URL cho ảnh (hết hạn sau STORAGE_PRESIGN_TTL giây).
-
-        Raises:
-            ScanFailedError: Nếu không tạo được presigned URL.
-        """
-        try:
-            url = await self._storage.presign_scan(image_key)
-        except StoragePresignError as exc:
-            logger.error("Presign failed for key=%s: %s", image_key, exc)
-            raise ScanFailedError("STORAGE_PRESIGN_FAILED") from exc
-        return url
+    def _get_presigned_url(self, image_key: str) -> str:
+        """Tạo presigned URL cho ảnh. TODO: implement với StorageClient."""
+        # Placeholder
+        return f"https://placeholder-storage.example.com/{image_key}"
 
     async def _call_gemini(
         self, image_bytes: bytes, mime_type: str
@@ -396,10 +360,9 @@ class ScanService:
                 bbox_w=bbox_w,
                 bbox_h=bbox_h,
             )
-            scan.items.append(item)
+            self._db.add(item)
 
         # commit sẽ được gọi bởi get_db() dependency sau khi return
-        await self._db.flush()
         return scan
 
     def _build_response(self, scan: Scan, image_url: str) -> ScanResponse:

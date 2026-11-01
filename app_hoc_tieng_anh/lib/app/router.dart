@@ -1,10 +1,6 @@
 // lib/app/router.dart
 //
 // Định nghĩa tất cả routes dùng go_router.
-// Redirect logic:
-//   - Chưa đăng nhập → /welcome
-//   - Đã đăng nhập, chưa verify email → /verify-email
-//   - Đã đăng nhập + verified → /home (shell)
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +9,16 @@ import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/challenge/presentation/pages/daily_challenge_page.dart';
-import '../features/learning/presentation/pages/learning_page.dart';
+import '../features/learning/domain/lesson_models.dart';
+import '../features/learning/presentation/pages/learning_path_page.dart';
+import '../features/learning/presentation/pages/lesson_page.dart';
+import '../features/learning/presentation/pages/lesson_result_page.dart';
+import '../features/profile/presentation/pages/profile_page.dart';
+import '../features/review/presentation/pages/review_page.dart';
+import '../features/scan/domain/scan_models.dart';
+import '../features/scan/presentation/pages/scan_camera_page.dart';
+import '../features/scan/presentation/pages/scan_result_page.dart';
+import '../features/vocabulary/presentation/pages/vocabulary_page.dart';
 
 // ── Route names (constants để tránh typo) ────────────────────────────────────
 
@@ -32,8 +37,10 @@ class AppRoutes {
   static const review = '/home/review';
   static const profile = '/home/profile';
   static const scan = '/scan';
+  static const scanResult = '/scan-result';
   static const wordDetail = '/word/:id';
   static const lessonDetail = '/lesson/:id';
+  static const lessonResult = '/lesson-result';
 }
 
 // ── Placeholder pages (sẽ thay bằng màn hình thật dần dần) ──────────────────
@@ -73,11 +80,8 @@ class _PlaceholderPage extends StatelessWidget {
 
 GoRouter createRouter() {
   return GoRouter(
-    initialLocation: AppRoutes.auth,
+    initialLocation: AppRoutes.learning,
     debugLogDiagnostics: true,
-
-    // TODO: Thêm redirect logic khi có auth state provider
-    // redirect: (context, state) { ... },
     routes: [
       // Welcome / Splash
       GoRoute(
@@ -117,13 +121,25 @@ GoRouter createRouter() {
       GoRoute(
         path: AppRoutes.scan,
         name: 'scan',
-        builder: (context, state) => const _PlaceholderPage(title: 'AI Scan'),
+        builder: (context, state) => const ScanCameraPage(),
       ),
 
       GoRoute(
         path: AppRoutes.dailyChallenge,
         name: 'dailyChallenge',
         builder: (context, state) => const DailyChallengePage(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.scanResult,
+        name: 'scanResult',
+        builder: (context, state) {
+          final result = state.extra as ScanResult?;
+          if (result == null) {
+            return const ScanCameraPage();
+          }
+          return ScanResultPage(result: result);
+        },
       ),
 
       // Word detail
@@ -141,8 +157,21 @@ GoRouter createRouter() {
         path: AppRoutes.lessonDetail,
         name: 'lessonDetail',
         builder: (context, state) {
-          final lessonId = state.pathParameters['id'] ?? '';
-          return _PlaceholderPage(title: 'Bài học: $lessonId');
+          final lessonId = state.pathParameters['id'] ?? 'unit1_lesson2';
+          return LessonPage(lessonId: lessonId);
+        },
+      ),
+
+      // Lesson result
+      GoRoute(
+        path: AppRoutes.lessonResult,
+        name: 'lessonResult',
+        builder: (context, state) {
+          final result = state.extra as LessonResult?;
+          if (result == null) {
+            return const LearningPathPage();
+          }
+          return LessonResultPage(result: result);
         },
       ),
 
@@ -153,26 +182,22 @@ GoRouter createRouter() {
           GoRoute(
             path: AppRoutes.learning,
             name: 'learning',
-            builder: (context, state) => LearningPage(
-              onStartChallenge: () => context.push(AppRoutes.dailyChallenge),
-            ),
+            builder: (context, state) => const LearningPathPage(),
           ),
           GoRoute(
             path: AppRoutes.vocabulary,
             name: 'vocabulary',
-            builder: (context, state) =>
-                const _PlaceholderPage(title: 'Kho từ vựng'),
+            builder: (context, state) => const VocabularyPage(),
           ),
           GoRoute(
             path: AppRoutes.review,
             name: 'review',
-            builder: (context, state) =>
-                const _PlaceholderPage(title: 'Ôn tập'),
+            builder: (context, state) => const ReviewPage(),
           ),
           GoRoute(
             path: AppRoutes.profile,
             name: 'profile',
-            builder: (context, state) => const _PlaceholderPage(title: 'Hồ sơ'),
+            builder: (context, state) => const ProfilePage(),
           ),
         ],
       ),
@@ -205,7 +230,7 @@ class MainShell extends StatelessWidget {
         onPressed: () => context.push(AppRoutes.scan),
         backgroundColor: AppColors.primary,
         elevation: 4,
-        tooltip: 'Scan vật thể',
+        tooltip: 'Scan vật thể AI',
         child: const Icon(
           Icons.camera_alt_rounded,
           color: Colors.white,
@@ -280,7 +305,7 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

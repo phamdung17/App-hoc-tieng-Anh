@@ -77,7 +77,7 @@ async def create_scan(
     content_type = image.content_type or "image/jpeg"
 
     # Reserve quota trước (raises 429 nếu hết quota)
-    quota_key = await reserve_scan_quota(current_user.id, redis)
+    await reserve_scan_quota(current_user.id, redis)
 
     try:
         result = await service.create_scan(
@@ -87,32 +87,32 @@ async def create_scan(
         )
         # Nếu status=no_object → hoàn trả quota
         if result.status == "no_object":
-            await release_scan_quota(current_user.id, redis, quota_key)
+            await release_scan_quota(current_user.id, redis)
         return result
 
     except InvalidImageError as exc:
-        await release_scan_quota(current_user.id, redis, quota_key)
+        await release_scan_quota(current_user.id, redis)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": exc.code, "message": exc.message},
         ) from exc
 
     except ImageRejectedError as exc:
-        await release_scan_quota(current_user.id, redis, quota_key)
+        await release_scan_quota(current_user.id, redis)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": exc.code, "message": "Image rejected by safety filter"},
         ) from exc
 
     except ScanFailedError as exc:
-        await release_scan_quota(current_user.id, redis, quota_key)
+        await release_scan_quota(current_user.id, redis)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": exc.code, "message": "Scan failed — please try again"},
         ) from exc
 
     except AITemporarilyUnavailableError as exc:
-        await release_scan_quota(current_user.id, redis, quota_key)
+        await release_scan_quota(current_user.id, redis)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": exc.code, "message": "AI service temporarily unavailable"},

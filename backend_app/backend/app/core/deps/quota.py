@@ -94,7 +94,7 @@ async def check_scan_quota(
 async def reserve_scan_quota(
     user_id: uuid.UUID,
     redis: "Redis",
-) -> str:
+) -> None:
     """
     Tạm giữ 1 lượt scan (increment). Gọi trước khi call Gemini.
     Nếu vượt limit → decrement lại + raise 429.
@@ -126,20 +126,17 @@ async def reserve_scan_quota(
                 "reset_at": _next_midnight_iso(),
             },
         )
-    return key
 
 
 async def release_scan_quota(
     user_id: uuid.UUID,
     redis: "Redis",
-    key: str | None = None,
 ) -> None:
     """
     Hoàn trả 1 lượt scan đã reserve khi scan thất bại.
     Gọi trong except block của scan service khi Gemini lỗi / ảnh invalid.
     """
-    # Dùng key đã reserve để scan chạy qua nửa đêm không đụng quota ngày mới.
-    key = key or _quota_key(user_id, _today_utc())
+    key = _quota_key(user_id, _today_utc())
     # Đảm bảo không xuống dưới 0
     current = await redis.get(key)
     if current and int(current) > 0:

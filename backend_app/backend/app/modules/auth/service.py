@@ -30,8 +30,6 @@ from app.core.security.jwt import (
     decode_refresh_token,
 )
 from app.core.security.password import hash_password, verify_password
-from app.integrations.mailer import MailerClient
-from app.integrations.mailer.errors import MailSendError
 
 from .errors import (
     EmailAlreadyRegisteredError,
@@ -53,7 +51,6 @@ class AuthService:
 
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
-        self._mailer = MailerClient()
 
     # ── Register ──────────────────────────────────────────────────────────
 
@@ -98,13 +95,10 @@ class AuthService:
 
         logger.info("New user registered: email=%s id=%s", email, user.id)
 
-        # Gửi email xác minh (no-op nếu chưa có RESEND_API_KEY)
-        try:
-            await self._mailer.send_verify_email(user.email, verify_token)
-        except MailSendError:
-            # Không làm rollback tài khoản đã tạo chỉ vì mail provider tạm lỗi.
-            # Người dùng có thể yêu cầu gửi lại qua resend_verify.
-            logger.exception("Could not send verification email to %s", user.email)
+        # TODO: Gửi email verify (Resend API)
+        # await send_verify_email(user.email, verify_token)
+        # Tạm log token để test mà không cần email service
+        logger.debug("Email verify token for %s: %s", email, verify_token)
 
         # Tạo token pair
         return self._build_auth_response(user)
@@ -208,9 +202,10 @@ class AuthService:
         user.email_verify_expires_at = datetime.now(timezone.utc) + timedelta(
             hours=_VERIFY_TOKEN_TTL_HOURS
         )
-        # Gửi lại email xác minh
-        await self._mailer.send_verify_email(email, user.email_verify_token)
-        logger.info("Resent verify email to %s", email)
+        # TODO: Gửi email verify (Resend API)
+        logger.debug(
+            "Resend verify token for %s: %s", email, user.email_verify_token
+        )
 
     # ── Private helpers ───────────────────────────────────────────────────
 

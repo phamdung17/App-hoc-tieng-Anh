@@ -11,7 +11,7 @@ Backend cung cấp REST API cho Flutter; chỉ Backend kết nối PostgreSQL, R
 - Firebase Cloud Messaging và Resend/SMTP cho push/email.
 
 ## AI scan architecture
-Không có container model YOLO hay detector tự host. API kiểm tra quyền/quota, xử lý ảnh, gọi Gemini qua `app/integrations/gemini/`, validate JSON bằng Pydantic, chuẩn hóa bounding box, dùng cache trong `words`, lưu scan và trả kết quả. Chỉ một Gemini call cho nhận diện và tạo thẻ từ; API key chỉ ở environment Backend.
+Không có container model YOLO hay detector tự host. API kiểm tra quyền/quota, xử lý ảnh, gọi Gemini qua `app/integrations/gemini_client`, validate JSON bằng Pydantic, chuẩn hóa bounding box, dùng cache trong `words`, lưu scan và trả kết quả. Chỉ một Gemini call cho nhận diện và tạo thẻ từ; API key chỉ ở environment Backend.
 
 ## Cây thư mục
 - `app/core/`: settings, security, dependencies, lỗi chuẩn.
@@ -30,21 +30,5 @@ Không có container model YOLO hay detector tự host. API kiểm tra quyền/q
 5. Ảnh gửi sang Google Gemini. Cần nêu việc này trong privacy policy và kiểm tra điều khoản dữ liệu áp dụng cho gói API đang dùng.
 6. Crop ảnh chỉ làm khi user lưu từ; ảnh scan private qua presigned URL 1 giờ.
 
-## Chạy môi trường phát triển
-
-Từ thư mục gốc repository:
-
-```powershell
-Copy-Item backend_app/backend/.env.example backend_app/backend/.env
-docker compose up -d --build postgres redis
-docker compose run --rm backend alembic upgrade head
-docker compose up -d backend
-docker compose ps
-Invoke-RestMethod http://localhost:8000/health
-```
-
-Điền Gemini API key và cấu hình S3/R2 vào `.env` nếu cần thử API scan thật. Các thông tin dịch vụ để trống trong file local cho phép khởi động API, nhưng không thể gọi Gemini hoặc storage. `.env` không được commit.
-
 ## Trạng thái
-
-Đã có code cho nền tảng FastAPI, auth, scan Gemini, users, vocab và các adapter storage/mailer/FCM. Migration đầu tiên nằm tại `alembic/versions/20261027_0001_initial_schema.py`. Cần chạy các lệnh phía trên và tests trong môi trường có Docker/Python để xác nhận schema và luồng backend hoạt động.
+Đây vẫn là bộ khung README/thư mục; chưa có code chạy, Gemini API key, migrations, dependencies hay Compose.

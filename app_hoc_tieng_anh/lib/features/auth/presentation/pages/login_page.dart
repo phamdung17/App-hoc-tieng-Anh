@@ -625,6 +625,22 @@ class _LoginPageState extends State<LoginPage> {
           ),
           onTap: () => _showMessage('Đăng nhập Apple chưa được cấu hình.'),
         ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: TextButton.icon(
+            onPressed: () => context.go(AppRoutes.learning),
+            icon: const Icon(Icons.rocket_launch_rounded, color: AppColors.primaryDark),
+            label: const Text(
+              'Trải nghiệm ngay (Chế độ Khách)',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryDark,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

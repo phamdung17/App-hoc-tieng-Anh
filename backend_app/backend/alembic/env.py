@@ -34,9 +34,11 @@ if config.config_file_name is not None:
 # Target metadata cho autogenerate
 target_metadata = Base.metadata
 
-# Override URL từ settings (không dùng URL trong alembic.ini).
-# Giữ driver asyncpg vì online migrations dùng async_engine_from_config.
-_database_url = settings.DATABASE_URL
+# Override URL từ settings (không dùng URL trong alembic.ini)
+# Thay asyncpg → psycopg2 cho alembic sync mode
+_sync_url = settings.DATABASE_URL.replace(
+    "postgresql+asyncpg://", "postgresql+psycopg2://"
+)
 
 
 # ── Offline mode ──────────────────────────────────────────────────────────────
@@ -47,7 +49,7 @@ def run_migrations_offline() -> None:
     Dùng để review DDL trước khi apply vào production.
     """
     context.configure(
-        url=_database_url,
+        url=_sync_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -74,9 +76,9 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Chạy migration với async engine."""
-    # Alembic chạy migration sync bên trong connection async qua run_sync.
+    # Tạo async engine từ sync URL (alembic chưa hỗ trợ native async)
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = _database_url
+    configuration["sqlalchemy.url"] = _sync_url
 
     connectable = async_engine_from_config(
         configuration,
