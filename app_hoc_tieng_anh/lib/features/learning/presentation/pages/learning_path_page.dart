@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_learning_repository.dart';
 import '../../domain/lesson_models.dart';
@@ -21,7 +23,9 @@ class _LearningPathPageState extends State<LearningPathPage> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Bài học này đang bị khóa. Hãy hoàn thành các bài trước nhé!'),
+            content: Text(
+              'Bài học này đang bị khóa. Hãy hoàn thành các bài trước nhé!',
+            ),
             duration: Duration(seconds: 2),
           ),
         );
@@ -68,7 +72,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(
-                      Icons.menu_book_rounded,
+                      LucideIcons.bookOpen,
                       color: AppColors.primaryDark,
                       size: 28,
                     ),
@@ -101,7 +105,10 @@ class _LearningPathPageState extends State<LearningPathPage> {
               ),
               const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceVariant.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(AppRadii.card),
@@ -110,13 +117,13 @@ class _LearningPathPageState extends State<LearningPathPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _FeatureTag(
-                      icon: Icons.bolt_rounded,
-                      color: const Color(0xFFFFB300),
+                      icon: LucideIcons.zap,
+                      color: AppColors.warning,
                       label: '+${lesson.xpReward} XP',
                     ),
                     Container(width: 1, height: 24, color: AppColors.divider),
                     _FeatureTag(
-                      icon: Icons.quiz_rounded,
+                      icon: LucideIcons.brain,
                       color: AppColors.primary,
                       label: '${lesson.exerciseCount} bài tập',
                     ),
@@ -170,20 +177,26 @@ class _LearningPathPageState extends State<LearningPathPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
+                color: AppColors.background,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFFFB74D).withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
-                  const Text('🔥', style: TextStyle(fontSize: 16)),
+                  const Icon(
+                    LucideIcons.flame,
+                    size: 16,
+                    color: AppColors.coral,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${_repository.userStreak} ngày',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFFE65100),
+                      color: AppColors.coral,
                     ),
                   ),
                 ],
@@ -194,20 +207,26 @@ class _LearningPathPageState extends State<LearningPathPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFDE7),
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFFFD54F).withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.5),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.bolt_rounded, size: 18, color: Color(0xFFFFA000)),
+                  const Icon(
+                    LucideIcons.zap,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
                   const SizedBox(width: 2),
                   Text(
                     '${_repository.userXp} XP',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFFFF8F00),
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ],
@@ -218,12 +237,12 @@ class _LearningPathPageState extends State<LearningPathPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEBEE),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.favorite_rounded, size: 18, color: AppColors.coral),
+                  Icon(LucideIcons.heart, size: 18, color: AppColors.coral),
                   SizedBox(width: 4),
                   Text(
                     '5',
@@ -244,7 +263,9 @@ class _LearningPathPageState extends State<LearningPathPage> {
           setState(() {});
         },
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
           padding: const EdgeInsets.only(bottom: 96),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -273,7 +294,11 @@ class _LearningPathPageState extends State<LearningPathPage> {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.flag_rounded, color: AppColors.primary, size: 20),
+                              Icon(
+                                LucideIcons.flag,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Mục tiêu hôm nay',
@@ -299,10 +324,15 @@ class _LearningPathPageState extends State<LearningPathPage> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
-                          value: (_repository.todayXpEarned / _repository.dailyGoalXp).clamp(0.0, 1.0),
+                          value:
+                              (_repository.todayXpEarned /
+                                      _repository.dailyGoalXp)
+                                  .clamp(0.0, 1.0),
                           minHeight: 10,
                           backgroundColor: AppColors.surfaceVariant,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -332,9 +362,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: unit.number == 1
-                    ? [const Color(0xFF45C7AA), const Color(0xFF28A488)]
-                    : [const Color(0xFF4A90E2), const Color(0xFF2575FC)],
+                colors: [AppColors.primary, AppColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

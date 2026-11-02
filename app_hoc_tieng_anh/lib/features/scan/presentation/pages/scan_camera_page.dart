@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_scan_service.dart';
 import '../widgets/scan_quota_badge.dart';
@@ -12,7 +14,8 @@ class ScanCameraPage extends StatefulWidget {
   State<ScanCameraPage> createState() => _ScanCameraPageState();
 }
 
-class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProviderStateMixin {
+class _ScanCameraPageState extends State<ScanCameraPage>
+    with SingleTickerProviderStateMixin {
   final _picker = ImagePicker();
   bool _isAnalyzing = false;
   String _analyzingStatus = 'Đang kết nối AI...';
@@ -40,7 +43,10 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
     super.dispose();
   }
 
-  Future<void> _processScan({String? imagePath, required String sampleType}) async {
+  Future<void> _processScan({
+    String? imagePath,
+    required String sampleType,
+  }) async {
     setState(() {
       _isAnalyzing = true;
       _analyzingStatus = 'Gemini AI đang phân tích hình ảnh...';
@@ -57,7 +63,9 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể phân tích ảnh lúc này. Vui lòng thử lại.')),
+        const SnackBar(
+          content: Text('Không thể phân tích ảnh lúc này. Vui lòng thử lại.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -107,9 +115,10 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            _getSampleEmoji(_selectedSample),
-                            style: const TextStyle(fontSize: 84),
+                          Icon(
+                            _getSampleIcon(_selectedSample),
+                            size: 84,
+                            color: AppColors.primaryDark,
                           ),
                           const SizedBox(height: 16),
                           const Text(
@@ -128,10 +137,15 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                         animation: _scanAnimation,
                         builder: (context, child) {
                           return Align(
-                            alignment: Alignment(0, (_scanAnimation.value * 2) - 1),
+                            alignment: Alignment(
+                              0,
+                              (_scanAnimation.value * 2) - 1,
+                            ),
                             child: Container(
                               height: 3,
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -142,7 +156,9 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.8),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.8,
+                                    ),
                                     blurRadius: 8,
                                     spreadRadius: 2,
                                   ),
@@ -171,12 +187,20 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      LucideIcons.arrowLeft,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   ScanQuotaBadge(remaining: remainingQuota),
                   IconButton(
                     onPressed: () {},
-                    icon: const Icon(Icons.flash_off_rounded, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      LucideIcons.zapOff,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                 ],
               ),
@@ -191,7 +215,11 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                 children: [
                   const Text(
                     'Hoặc chọn mẫu vật thể để thử ngay:',
-                    style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   SingleChildScrollView(
@@ -201,28 +229,31 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _SampleChip(
-                          emoji: '☕',
+                          icon: LucideIcons.coffee,
                           label: 'Cà phê',
                           isSelected: _selectedSample == 'coffee',
-                          onTap: () => setState(() => _selectedSample = 'coffee'),
+                          onTap: () =>
+                              setState(() => _selectedSample = 'coffee'),
                         ),
                         _SampleChip(
-                          emoji: '📖',
+                          icon: LucideIcons.bookOpen,
                           label: 'Sổ tay',
                           isSelected: _selectedSample == 'book',
                           onTap: () => setState(() => _selectedSample = 'book'),
                         ),
                         _SampleChip(
-                          emoji: '💻',
+                          icon: LucideIcons.laptop,
                           label: 'Laptop',
                           isSelected: _selectedSample == 'laptop',
-                          onTap: () => setState(() => _selectedSample = 'laptop'),
+                          onTap: () =>
+                              setState(() => _selectedSample = 'laptop'),
                         ),
                         _SampleChip(
-                          emoji: '🍎',
+                          icon: LucideIcons.apple,
                           label: 'Quả táo',
                           isSelected: _selectedSample == 'apple',
-                          onTap: () => setState(() => _selectedSample = 'apple'),
+                          onTap: () =>
+                              setState(() => _selectedSample = 'apple'),
                         ),
                       ],
                     ),
@@ -242,7 +273,11 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                   // Gallery Pick
                   IconButton(
                     onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 30),
+                    icon: const Icon(
+                      LucideIcons.image,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                     tooltip: 'Chọn ảnh từ thư viện',
                   ),
 
@@ -263,7 +298,7 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.camera_rounded,
+                          LucideIcons.camera,
                           color: Colors.white,
                           size: 34,
                         ),
@@ -274,7 +309,11 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
                   // Camera flip / sample trigger
                   IconButton(
                     onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.cameraswitch_rounded, color: Colors.white, size: 30),
+                    icon: const Icon(
+                      LucideIcons.refreshCw,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                     tooltip: 'Chụp ảnh thật',
                   ),
                 ],
@@ -309,19 +348,12 @@ class _ScanCameraPageState extends State<ScanCameraPage> with SingleTickerProvid
     );
   }
 
-  String _getSampleEmoji(String sample) {
-    switch (sample) {
-      case 'book':
-        return '📖';
-      case 'laptop':
-        return '💻';
-      case 'apple':
-        return '🍎';
-      case 'coffee':
-      default:
-        return '☕';
-    }
-  }
+  IconData _getSampleIcon(String sample) => switch (sample) {
+    'book' => LucideIcons.bookOpen,
+    'laptop' => LucideIcons.laptop,
+    'apple' => LucideIcons.apple,
+    _ => LucideIcons.coffee,
+  };
 }
 
 class _CornerBrackets extends StatelessWidget {
@@ -401,13 +433,13 @@ class _CornerBrackets extends StatelessWidget {
 }
 
 class _SampleChip extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _SampleChip({
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -432,7 +464,7 @@ class _SampleChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 16)),
+              Icon(icon, size: 16, color: Colors.white),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -449,4 +481,3 @@ class _SampleChip extends StatelessWidget {
     );
   }
 }
-

@@ -1,10 +1,21 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_scan_service.dart';
 import '../../domain/scan_models.dart';
 import '../widgets/detection_overlay.dart';
+
+IconData _sampleIcon(String? sample) => switch (sample) {
+  'book' => LucideIcons.bookOpen,
+  'laptop' => LucideIcons.laptop,
+  'apple' => LucideIcons.apple,
+  'coffee' => LucideIcons.coffee,
+  _ => LucideIcons.search,
+};
 
 class ScanResultPage extends StatefulWidget {
   final ScanResult result;
@@ -23,7 +34,9 @@ class _ScanResultPageState extends State<ScanResultPage> {
   void initState() {
     super.initState();
     _selectedObject = widget.result.detectedObjects.first;
-    _isSaved = MockScanService.instance.savedWordIds.contains(_selectedObject.id);
+    _isSaved = MockScanService.instance.savedWordIds.contains(
+      _selectedObject.id,
+    );
   }
 
   void _saveWord() {
@@ -37,10 +50,12 @@ class _ScanResultPageState extends State<ScanResultPage> {
         backgroundColor: AppColors.primaryDark,
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const Icon(LucideIcons.circleCheck, color: Colors.white, size: 20),
             const SizedBox(width: 10),
             Expanded(
-              child: Text('Đã lưu "${_selectedObject.label}" vào kho từ vựng của bạn!'),
+              child: Text(
+                'Đã lưu "${_selectedObject.label}" vào kho từ vựng của bạn!',
+              ),
             ),
           ],
         ),
@@ -62,7 +77,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
         backgroundColor: Colors.white,
         elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -89,9 +104,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       )
                     else
                       Center(
-                        child: Text(
-                          widget.result.sampleEmoji ?? '🔍',
-                          style: const TextStyle(fontSize: 96),
+                        child: Icon(
+                          _sampleIcon(widget.result.sampleKey),
+                          size: 72,
+                          color: AppColors.primaryDark,
                         ),
                       ),
 
@@ -102,7 +118,8 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       onSelectObject: (obj) {
                         setState(() {
                           _selectedObject = obj;
-                          _isSaved = MockScanService.instance.savedWordIds.contains(obj.id);
+                          _isSaved = MockScanService.instance.savedWordIds
+                              .contains(obj.id);
                         });
                       },
                     ),
@@ -119,7 +136,9 @@ class _ScanResultPageState extends State<ScanResultPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(AppRadii.card),
-                border: Border.all(color: AppColors.outline.withValues(alpha: 0.1)),
+                border: Border.all(
+                  color: AppColors.outline.withValues(alpha: 0.1),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
@@ -151,7 +170,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.primaryLight,
                                     borderRadius: BorderRadius.circular(8),
@@ -184,12 +206,17 @@ class _ScanResultPageState extends State<ScanResultPage> {
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Phát âm: "${_selectedObject.label}"'),
+                              content: Text(
+                                'Phát âm: "${_selectedObject.label}"',
+                              ),
                               duration: const Duration(seconds: 1),
                             ),
                           );
                         },
-                        icon: const Icon(Icons.volume_up_rounded, color: AppColors.primaryDark),
+                        icon: const Icon(
+                          LucideIcons.volume2,
+                          color: AppColors.primaryDark,
+                        ),
                         style: IconButton.styleFrom(
                           backgroundColor: AppColors.primaryLight,
                         ),
@@ -227,7 +254,9 @@ class _ScanResultPageState extends State<ScanResultPage> {
                     decoration: BoxDecoration(
                       color: AppColors.surfaceVariant.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,8 +298,12 @@ class _ScanResultPageState extends State<ScanResultPage> {
             // Save to Vocabulary Button
             ElevatedButton.icon(
               onPressed: _isSaved ? null : _saveWord,
-              icon: Icon(_isSaved ? Icons.bookmark_added_rounded : Icons.bookmark_add_outlined),
-              label: Text(_isSaved ? 'ĐÃ LƯU VÀO KHO TỪ VỰNG' : 'LƯU VÀO KHO TỪ VỰNG'),
+              icon: Icon(
+                _isSaved ? LucideIcons.bookmarkCheck : LucideIcons.bookmarkPlus,
+              ),
+              label: Text(
+                _isSaved ? 'ĐÃ LƯU VÀO KHO TỪ VỰNG' : 'LƯU VÀO KHO TỪ VỰNG',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: AppColors.primaryLight,
@@ -281,7 +314,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
                   borderRadius: BorderRadius.circular(AppRadii.button),
                 ),
                 elevation: _isSaved ? 0 : 2,
-                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
 
@@ -297,7 +333,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.button),
                 ),
-                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               child: const Text('Quét vật thể khác'),
             ),
@@ -307,4 +346,3 @@ class _ScanResultPageState extends State<ScanResultPage> {
     );
   }
 }
-

@@ -7,7 +7,10 @@ class MockScanService {
   int remainingQuota = 8;
   final List<String> savedWordIds = [];
 
-  Future<ScanResult> analyzeObject({String? imagePath, String sampleType = 'coffee'}) async {
+  Future<ScanResult> analyzeObject({
+    String? imagePath,
+    String sampleType = 'coffee',
+  }) async {
     // Simulate AI processing delay
     await Future.delayed(const Duration(milliseconds: 1200));
 
@@ -20,7 +23,7 @@ class MockScanService {
         return ScanResult(
           id: 'scan_${DateTime.now().millisecondsSinceEpoch}',
           imagePath: imagePath,
-          sampleEmoji: '📖',
+          sampleKey: 'book',
           remainingQuota: remainingQuota,
           detectedObjects: const [
             DetectedObject(
@@ -41,7 +44,7 @@ class MockScanService {
         return ScanResult(
           id: 'scan_${DateTime.now().millisecondsSinceEpoch}',
           imagePath: imagePath,
-          sampleEmoji: '💻',
+          sampleKey: 'laptop',
           remainingQuota: remainingQuota,
           detectedObjects: const [
             DetectedObject(
@@ -51,7 +54,8 @@ class MockScanService {
               partOfSpeech: 'noun',
               meaningVi: 'Máy tính xách tay',
               exampleEn: 'She uses a laptop to learn English online.',
-              exampleVi: 'Cô ấy dùng máy tính xách tay để học tiếng Anh trực tuyến.',
+              exampleVi:
+                  'Cô ấy dùng máy tính xách tay để học tiếng Anh trực tuyến.',
               confidence: 0.98,
               box: BoundingBox(x: 0.15, y: 0.2, width: 0.7, height: 0.55),
             ),
@@ -62,7 +66,7 @@ class MockScanService {
         return ScanResult(
           id: 'scan_${DateTime.now().millisecondsSinceEpoch}',
           imagePath: imagePath,
-          sampleEmoji: '🍎',
+          sampleKey: 'apple',
           remainingQuota: remainingQuota,
           detectedObjects: const [
             DetectedObject(
@@ -84,7 +88,7 @@ class MockScanService {
         return ScanResult(
           id: 'scan_${DateTime.now().millisecondsSinceEpoch}',
           imagePath: imagePath,
-          sampleEmoji: '☕',
+          sampleKey: 'coffee',
           remainingQuota: remainingQuota,
           detectedObjects: const [
             DetectedObject(
@@ -109,4 +113,3 @@ class MockScanService {
     }
   }
 }
-

@@ -1,5 +1,8 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/exercise_models.dart';
 
@@ -14,7 +17,8 @@ class MatchPairsExerciseWidget extends StatefulWidget {
   });
 
   @override
-  State<MatchPairsExerciseWidget> createState() => _MatchPairsExerciseWidgetState();
+  State<MatchPairsExerciseWidget> createState() =>
+      _MatchPairsExerciseWidgetState();
 }
 
 class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
@@ -43,8 +47,11 @@ class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
   }
 
   void _initPairs() {
-    _shuffledEnglish = widget.exercise.pairs.map((p) => p.english).toList()..shuffle(Random());
-    _shuffledVietnamese = widget.exercise.pairs.map((p) => p.vietnamese).toList()..shuffle(Random());
+    _shuffledEnglish = widget.exercise.pairs.map((p) => p.english).toList()
+      ..shuffle(Random());
+    _shuffledVietnamese =
+        widget.exercise.pairs.map((p) => p.vietnamese).toList()
+          ..shuffle(Random());
     _matchedPairs.clear();
     _selectedEn = null;
     _selectedVi = null;
@@ -66,7 +73,9 @@ class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
 
   void _selectVietnamese(String vi) {
     // Check if vi is already part of matched pair
-    final matchedPair = widget.exercise.pairs.any((p) => _matchedPairs.contains(p.english) && p.vietnamese == vi);
+    final matchedPair = widget.exercise.pairs.any(
+      (p) => _matchedPairs.contains(p.english) && p.vietnamese == vi,
+    );
     if (matchedPair) return;
 
     setState(() {
@@ -84,7 +93,9 @@ class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
     final en = _selectedEn!;
     final vi = _selectedVi!;
 
-    final isCorrect = widget.exercise.pairs.any((p) => p.english == en && p.vietnamese == vi);
+    final isCorrect = widget.exercise.pairs.any(
+      (p) => p.english == en && p.vietnamese == vi,
+    );
 
     if (isCorrect) {
       setState(() {
@@ -124,9 +135,9 @@ class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
         Text(
           widget.exercise.prompt,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 18),
 
@@ -140,7 +151,8 @@ class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
                 child: ListView.separated(
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _shuffledEnglish.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final item = _shuffledEnglish[index];
                     final isMatched = _matchedPairs.contains(item);
@@ -163,11 +175,15 @@ class _MatchPairsExerciseWidgetState extends State<MatchPairsExerciseWidget> {
                 child: ListView.separated(
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _shuffledVietnamese.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final item = _shuffledVietnamese[index];
-                    final isMatched = widget.exercise.pairs
-                        .any((p) => _matchedPairs.contains(p.english) && p.vietnamese == item);
+                    final isMatched = widget.exercise.pairs.any(
+                      (p) =>
+                          _matchedPairs.contains(p.english) &&
+                          p.vietnamese == item,
+                    );
                     final isSelected = _selectedVi == item;
                     final isWrong = _wrongVi == item;
 
@@ -233,7 +249,10 @@ class _PairCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(AppRadii.card),
-          border: Border.all(color: borderColor, width: isSelected || isWrong ? 2.5 : 1.5),
+          border: Border.all(
+            color: borderColor,
+            width: isSelected || isWrong ? 2.5 : 1.5,
+          ),
           boxShadow: isMatched
               ? []
               : [
@@ -255,7 +274,9 @@ class _PairCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: isSelected || isMatched ? FontWeight.w700 : FontWeight.w600,
+                  fontWeight: isSelected || isMatched
+                      ? FontWeight.w700
+                      : FontWeight.w600,
                   color: textColor,
                   decoration: isMatched ? TextDecoration.lineThrough : null,
                 ),
@@ -263,7 +284,11 @@ class _PairCard extends StatelessWidget {
             ),
             if (isMatched) ...[
               const SizedBox(width: 4),
-              const Icon(Icons.check_circle_rounded, color: AppColors.primaryDark, size: 18),
+              const Icon(
+                LucideIcons.circleCheck,
+                color: AppColors.primaryDark,
+                size: 18,
+              ),
             ],
           ],
         ),

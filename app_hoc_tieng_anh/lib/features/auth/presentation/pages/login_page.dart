@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -84,13 +85,7 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         context.go(AppRoutes.learning);
       } else {
-        setState(() {
-          _isLogin = true;
-          _passwordController.clear();
-        });
-        _showMessage(
-          'Tạo tài khoản thành công. Dịch vụ gửi email xác minh cần được cấu hình.',
-        );
+        context.go(AppRoutes.verifyEmail, extra: _emailController.text.trim());
       }
     } on DioException catch (error) {
       if (!mounted) return;
@@ -175,9 +170,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: SvgPicture.asset(
-                        'assets/images/auth/icon_reset_mail.svg',
-                        excludeFromSemantics: true,
+                      child: const Icon(
+                        LucideIcons.mail,
+                        size: 20,
+                        color: AppColors.primaryDark,
                       ),
                     ),
                     IconButton(
@@ -188,10 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: 32,
                       ),
                       padding: EdgeInsets.zero,
-                      icon: SvgPicture.asset(
-                        'assets/images/auth/icon_close.svg',
-                        excludeFromSemantics: true,
-                      ),
+                      icon: const Icon(LucideIcons.x, size: 18),
                     ),
                   ],
                 ),
@@ -533,7 +526,7 @@ class _LoginPageState extends State<LoginPage> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: _openForgotPasswordDialog,
+                onPressed: () => context.push(AppRoutes.forgotPassword),
                 style: TextButton.styleFrom(
                   minimumSize: const Size(0, 32),
                   padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
@@ -631,7 +624,7 @@ class _LoginPageState extends State<LoginPage> {
           height: 48,
           child: TextButton.icon(
             onPressed: () => context.go(AppRoutes.learning),
-            icon: const Icon(Icons.rocket_launch_rounded, color: AppColors.primaryDark),
+            icon: const Icon(LucideIcons.rocket, color: AppColors.primaryDark),
             label: const Text(
               'Trải nghiệm ngay (Chế độ Khách)',
               style: TextStyle(
@@ -713,15 +706,17 @@ class _AssetIcon extends StatelessWidget {
   final Color? color;
 
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(
-    asset,
-    width: width,
-    height: height,
-    colorFilter: color == null
-        ? null
-        : ColorFilter.mode(color!, BlendMode.srcIn),
-    excludeFromSemantics: true,
-  );
+  Widget build(BuildContext context) =>
+      Icon(_icon, size: width, color: color ?? AppColors.primaryDark);
+
+  IconData get _icon => switch (asset.split('/').last) {
+    'icon_mail.svg' || 'icon_register_mail.svg' => LucideIcons.mail,
+    'icon_lock.svg' => LucideIcons.lockKeyhole,
+    'icon_eye.svg' => LucideIcons.eye,
+    'icon_arrow_right.svg' => LucideIcons.arrowRight,
+    'icon_apple.svg' || 'icon_register_apple.svg' => LucideIcons.apple,
+    _ => LucideIcons.circleHelp,
+  };
 }
 
 class _SocialButton extends StatelessWidget {

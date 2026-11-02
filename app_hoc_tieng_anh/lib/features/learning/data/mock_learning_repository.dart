@@ -1,5 +1,7 @@
 // Repository providing realistic mock learning data for offline / prototype usage
 
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../domain/exercise_models.dart';
 import '../domain/lesson_models.dart';
 
@@ -144,10 +146,13 @@ class MockLearningRepository {
             targetWord: 'Student',
             ipa: '/ˈstjuː.dənt/',
             options: [
-              ChoiceOption(text: 'Giáo viên', emoji: '👨‍🏫'),
-              ChoiceOption(text: 'Học sinh, sinh viên', emoji: '🧑‍🎓'),
-              ChoiceOption(text: 'Bác sĩ', emoji: '👨‍⚕️'),
-              ChoiceOption(text: 'Kỹ sư', emoji: '👷'),
+              ChoiceOption(text: 'Giáo viên', icon: LucideIcons.presentation),
+              ChoiceOption(
+                text: 'Học sinh, sinh viên',
+                icon: LucideIcons.graduationCap,
+              ),
+              ChoiceOption(text: 'Bác sĩ', icon: LucideIcons.stethoscope),
+              ChoiceOption(text: 'Kỹ sư', icon: LucideIcons.hardHat),
             ],
             correctOptionIndex: 1,
             explanation: '"Student" có nghĩa là học sinh hoặc sinh viên.',
@@ -158,7 +163,15 @@ class MockLearningRepository {
             prompt: 'Sắp xếp các từ để hoàn thành câu:',
             vietnameseSentence: 'Tôi là một học sinh.',
             correctWords: ['I', 'am', 'a', 'student'],
-            availableWords: ['a', 'am', 'teacher', 'I', 'student', 'is', 'very'],
+            availableWords: [
+              'a',
+              'am',
+              'teacher',
+              'I',
+              'student',
+              'is',
+              'very',
+            ],
             explanation: 'Cấu trúc: I + am + a/an + danh từ nghề nghiệp.',
           ),
           const MatchPairsExercise(
@@ -173,14 +186,36 @@ class MockLearningRepository {
             ],
             explanation: 'Các danh từ cơ bản khi giới thiệu bản thân.',
           ),
+          const ListeningExercise(
+            id: 'u1_l2_q_listen',
+            lessonId: 'unit1_lesson2',
+            prompt: 'Nghe và điền từ còn thiếu',
+            audioText: 'I am a student',
+            answer: 'student',
+          ),
+          const SpeakingExercise(
+            id: 'u1_l2_q_speak',
+            lessonId: 'unit1_lesson2',
+            prompt: 'Đọc câu sau thành tiếng',
+            phrase: 'Nice to meet you',
+          ),
           const WordBankExercise(
             id: 'u1_l2_q4',
             lessonId: 'unit1_lesson2',
             prompt: 'Dịch câu sau sang tiếng Anh:',
             vietnameseSentence: 'Rất vui được gặp bạn.',
             correctWords: ['Nice', 'to', 'meet', 'you'],
-            availableWords: ['Nice', 'Good', 'meet', 'to', 'morning', 'you', 'see'],
-            explanation: '"Nice to meet you" là lời chào lịch sự khi gặp ai đó lần đầu.',
+            availableWords: [
+              'Nice',
+              'Good',
+              'meet',
+              'to',
+              'morning',
+              'you',
+              'see',
+            ],
+            explanation:
+                '"Nice to meet you" là lời chào lịch sự khi gặp ai đó lần đầu.',
           ),
         ],
       );
@@ -200,10 +235,10 @@ class MockLearningRepository {
           targetWord: 'Hello',
           ipa: '/həˈləʊ/',
           options: [
-            ChoiceOption(text: 'Hello', emoji: '👋'),
-            ChoiceOption(text: 'Goodbye', emoji: '🏃'),
-            ChoiceOption(text: 'Thank you', emoji: '🙏'),
-            ChoiceOption(text: 'Sorry', emoji: '🙇'),
+            ChoiceOption(text: 'Hello', icon: LucideIcons.hand),
+            ChoiceOption(text: 'Goodbye', icon: LucideIcons.doorOpen),
+            ChoiceOption(text: 'Thank you', icon: LucideIcons.heartHandshake),
+            ChoiceOption(text: 'Sorry', icon: LucideIcons.handHeart),
           ],
           correctOptionIndex: 0,
           explanation: '"Hello" là từ phổ biến nhất dùng để chào hỏi.',
@@ -233,4 +268,3 @@ class MockLearningRepository {
     );
   }
 }
-

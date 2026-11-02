@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/exercise_models.dart';
 
@@ -60,9 +61,9 @@ class _WordBankExerciseWidgetState extends State<WordBankExerciseWidget> {
         Text(
           widget.exercise.prompt,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 14),
 
@@ -72,7 +73,10 @@ class _WordBankExerciseWidgetState extends State<WordBankExerciseWidget> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppRadii.card),
-            border: Border.all(color: AppColors.outline.withValues(alpha: 0.12), width: 1.5),
+            border: Border.all(
+              color: AppColors.outline.withValues(alpha: 0.12),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -83,7 +87,12 @@ class _WordBankExerciseWidgetState extends State<WordBankExerciseWidget> {
           ),
           child: Row(
             children: [
-              const Text('🦉', style: TextStyle(fontSize: 32)),
+              Image.asset(
+                'assets/images/onboarding/lingoup_owl.png',
+                width: 40,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -148,9 +157,9 @@ class _WordBankExerciseWidgetState extends State<WordBankExerciseWidget> {
         Text(
           'Ngân hàng từ vựng:',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -195,7 +204,9 @@ class _WordChip extends StatelessWidget {
             color: isSelected ? AppColors.primaryLight : Colors.white,
             borderRadius: BorderRadius.circular(AppRadii.button),
             border: Border.all(
-              color: isSelected ? AppColors.primaryDark : AppColors.outline.withValues(alpha: 0.18),
+              color: isSelected
+                  ? AppColors.primaryDark
+                  : AppColors.outline.withValues(alpha: 0.18),
               width: 1.5,
             ),
             boxShadow: [
@@ -221,4 +232,3 @@ class _WordChip extends StatelessWidget {
     );
   }
 }
-

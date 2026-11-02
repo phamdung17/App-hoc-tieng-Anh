@@ -41,16 +41,15 @@ class DetectedObject {
 class ScanResult {
   final String id;
   final String? imagePath;
-  final String? sampleEmoji;
+  final String? sampleKey;
   final List<DetectedObject> detectedObjects;
   final int remainingQuota;
 
   const ScanResult({
     required this.id,
     this.imagePath,
-    this.sampleEmoji,
+    this.sampleKey,
     required this.detectedObjects,
     this.remainingQuota = 8,
   });
 }
-

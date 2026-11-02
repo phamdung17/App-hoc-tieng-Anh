@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/lesson_models.dart';
 
@@ -23,7 +25,7 @@ class UnitLessonNodeWidget extends StatelessWidget {
       case LessonStatus.completed:
         nodeColor = const Color(0xFFFFC837);
         iconColor = Colors.white;
-        icon = Icons.check_rounded;
+        icon = LucideIcons.check;
         badge = Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
@@ -33,7 +35,7 @@ class UnitLessonNodeWidget extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.star_rounded, size: 14, color: Colors.white),
+              Icon(LucideIcons.star, size: 14, color: Colors.white),
               SizedBox(width: 2),
               Text(
                 'Xong',
@@ -50,7 +52,7 @@ class UnitLessonNodeWidget extends StatelessWidget {
       case LessonStatus.current:
         nodeColor = AppColors.primary;
         iconColor = Colors.white;
-        icon = Icons.play_arrow_rounded;
+        icon = LucideIcons.play;
         badge = Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -78,7 +80,7 @@ class UnitLessonNodeWidget extends StatelessWidget {
       case LessonStatus.locked:
         nodeColor = const Color(0xFFE2E8F0);
         iconColor = const Color(0xFF94A3B8);
-        icon = Icons.lock_rounded;
+        icon = LucideIcons.lockKeyhole;
         badge = null;
         break;
     }
@@ -90,10 +92,7 @@ class UnitLessonNodeWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (badge != null) ...[
-            badge,
-            const SizedBox(height: 6),
-          ],
+          if (badge != null) ...[badge, const SizedBox(height: 6)],
           // Circular Node
           Stack(
             alignment: Alignment.center,
@@ -126,11 +125,7 @@ class UnitLessonNodeWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: isCurrent ? 36 : 30,
-                ),
+                child: Icon(icon, color: iconColor, size: isCurrent ? 36 : 30),
               ),
             ],
           ),
@@ -157,4 +152,3 @@ class UnitLessonNodeWidget extends StatelessWidget {
     );
   }
 }
-

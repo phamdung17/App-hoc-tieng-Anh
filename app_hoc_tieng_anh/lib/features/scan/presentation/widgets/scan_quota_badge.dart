@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 
 class ScanQuotaBadge extends StatelessWidget {
   final int remaining;
   final int total;
 
-  const ScanQuotaBadge({
-    super.key,
-    required this.remaining,
-    this.total = 10,
-  });
+  const ScanQuotaBadge({super.key, required this.remaining, this.total = 10});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +21,7 @@ class ScanQuotaBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 16),
+          const Icon(LucideIcons.sparkles, color: AppColors.primary, size: 16),
           const SizedBox(width: 6),
           Text(
             'Còn $remaining/$total lượt hôm nay',
@@ -38,4 +36,3 @@ class ScanQuotaBadge extends StatelessWidget {
     );
   }
 }
-

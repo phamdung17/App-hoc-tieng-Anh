@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 
 class AnswerFeedbackSheet extends StatelessWidget {
@@ -17,9 +19,11 @@ class AnswerFeedbackSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isCorrect ? AppColors.primaryLight : const Color(0xFFFFECEB);
+    final bgColor = isCorrect
+        ? AppColors.primaryLight
+        : const Color(0xFFFFECEB);
     final primaryColor = isCorrect ? AppColors.primaryDark : AppColors.error;
-    final iconData = isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded;
+    final iconData = isCorrect ? LucideIcons.circleCheck : LucideIcons.circleX;
     final titleText = isCorrect ? 'Tuyệt vời!' : 'Chưa chính xác';
 
     return Container(
@@ -84,7 +88,9 @@ class AnswerFeedbackSheet extends StatelessWidget {
             explanation,
             style: TextStyle(
               fontSize: 14,
-              color: isCorrect ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isCorrect
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
               height: 1.4,
             ),
           ),
@@ -114,4 +120,3 @@ class AnswerFeedbackSheet extends StatelessWidget {
     );
   }
 }
-

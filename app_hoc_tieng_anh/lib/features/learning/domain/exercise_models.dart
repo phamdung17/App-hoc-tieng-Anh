@@ -1,10 +1,7 @@
 // Domain models for interactive learning exercises
+import 'package:flutter/material.dart';
 
-enum ExerciseType {
-  choice,
-  wordBank,
-  matchPairs,
-}
+enum ExerciseType { choice, wordBank, matchPairs, listening, speaking }
 
 abstract class Exercise {
   final String id;
@@ -22,14 +19,10 @@ abstract class Exercise {
 
 class ChoiceOption {
   final String text;
-  final String? emoji;
+  final IconData? icon;
   final String? subtitle;
 
-  const ChoiceOption({
-    required this.text,
-    this.emoji,
-    this.subtitle,
-  });
+  const ChoiceOption({required this.text, this.icon, this.subtitle});
 }
 
 class ChoiceExercise extends Exercise {
@@ -72,10 +65,7 @@ class WordPair {
   final String english;
   final String vietnamese;
 
-  const WordPair({
-    required this.english,
-    required this.vietnamese,
-  });
+  const WordPair({required this.english, required this.vietnamese});
 }
 
 class MatchPairsExercise extends Exercise {
@@ -91,3 +81,24 @@ class MatchPairsExercise extends Exercise {
   }) : super(type: ExerciseType.matchPairs);
 }
 
+class ListeningExercise extends Exercise {
+  final String audioText;
+  final String answer;
+  const ListeningExercise({
+    required super.id,
+    required super.lessonId,
+    required super.prompt,
+    required this.audioText,
+    required this.answer,
+  }) : super(type: ExerciseType.listening);
+}
+
+class SpeakingExercise extends Exercise {
+  final String phrase;
+  const SpeakingExercise({
+    required super.id,
+    required super.lessonId,
+    required super.prompt,
+    required this.phrase,
+  }) : super(type: ExerciseType.speaking);
+}

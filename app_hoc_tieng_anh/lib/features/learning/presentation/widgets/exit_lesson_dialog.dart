@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 
 class ExitLessonDialog extends StatelessWidget {
@@ -12,7 +14,7 @@ class ExitLessonDialog extends StatelessWidget {
       ),
       title: const Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 28),
+          Icon(LucideIcons.triangleAlert, color: AppColors.warning, size: 28),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -24,7 +26,11 @@ class ExitLessonDialog extends StatelessWidget {
       ),
       content: const Text(
         'Nếu thoát bây giờ, bạn sẽ bị mất tiến trình câu hỏi của bài học này.',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 15, height: 1.4),
+        style: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 15,
+          height: 1.4,
+        ),
       ),
       actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       actions: [
@@ -57,4 +63,3 @@ class ExitLessonDialog extends StatelessWidget {
     );
   }
 }
-

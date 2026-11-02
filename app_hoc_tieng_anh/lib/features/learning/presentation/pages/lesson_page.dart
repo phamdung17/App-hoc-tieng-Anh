@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+
+import 'dart:async';
+
+import '../../../../core/audio/app_sound_effects.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_learning_repository.dart';
 import '../../domain/exercise_models.dart';
@@ -34,6 +39,8 @@ class _LessonPageState extends State<LessonPage> {
   int? _selectedChoiceIndex;
   List<String> _selectedWordBankWords = [];
   bool _matchPairsDone = false;
+  String _listeningAnswer = '';
+  bool _speakingDone = false;
 
   bool _isAnswerChecked = false;
   bool _isCurrentCorrect = false;
@@ -43,7 +50,9 @@ class _LessonPageState extends State<LessonPage> {
   @override
   void initState() {
     super.initState();
-    _lessonDetail = MockLearningRepository.instance.getLessonDetail(widget.lessonId);
+    _lessonDetail = MockLearningRepository.instance.getLessonDetail(
+      widget.lessonId,
+    );
     _exerciseQueue = List.from(_lessonDetail.exercises);
     _totalOriginalCount = _exerciseQueue.length;
   }
@@ -53,6 +62,8 @@ class _LessonPageState extends State<LessonPage> {
       _selectedChoiceIndex = null;
       _selectedWordBankWords = [];
       _matchPairsDone = false;
+      _listeningAnswer = '';
+      _speakingDone = false;
       _isAnswerChecked = false;
       _isCurrentCorrect = false;
       _currentExplanation = '';
@@ -72,6 +83,10 @@ class _LessonPageState extends State<LessonPage> {
         return _selectedWordBankWords.isNotEmpty;
       case ExerciseType.matchPairs:
         return _matchPairsDone;
+      case ExerciseType.listening:
+        return _listeningAnswer.isNotEmpty;
+      case ExerciseType.speaking:
+        return _speakingDone;
     }
   }
 
@@ -90,12 +105,22 @@ class _LessonPageState extends State<LessonPage> {
     } else if (current is WordBankExercise) {
       final joinedSelected = _selectedWordBankWords.join(' ');
       final joinedTarget = current.correctWords.join(' ');
-      isCorrect = joinedSelected.trim().toLowerCase() == joinedTarget.trim().toLowerCase();
+      isCorrect =
+          joinedSelected.trim().toLowerCase() ==
+          joinedTarget.trim().toLowerCase();
       explanation = current.explanation;
       correctAnswerText = current.correctWords.join(' ');
     } else if (current is MatchPairsExercise) {
       isCorrect = true;
       explanation = current.explanation;
+    } else if (current is ListeningExercise) {
+      isCorrect =
+          _listeningAnswer.trim().toLowerCase() == current.answer.toLowerCase();
+      explanation = 'Câu nghe: ${current.answer}';
+      correctAnswerText = current.answer;
+    } else if (current is SpeakingExercise) {
+      isCorrect = true;
+      explanation = 'Bạn đã hoàn thành lượt luyện phát âm.';
     }
 
     if (isCorrect) {
@@ -108,6 +133,11 @@ class _LessonPageState extends State<LessonPage> {
       _currentExplanation = explanation;
       _currentCorrectAnswerText = isCorrect ? null : correctAnswerText;
     });
+    unawaited(
+      AppSoundEffects.instance.play(
+        isCorrect ? AppSoundEffect.correct : AppSoundEffect.incorrect,
+      ),
+    );
   }
 
   void _onFeedbackContinue() {
@@ -131,10 +161,16 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   void _finishLesson() {
+    unawaited(AppSoundEffects.instance.play(AppSoundEffect.lessonComplete));
     final durationSeconds = DateTime.now().difference(_startTime).inSeconds;
-    final accuracy = _attemptsCount > 0 ? ((_correctCount / _attemptsCount) * 100).round() : 100;
+    final accuracy = _attemptsCount > 0
+        ? ((_correctCount / _attemptsCount) * 100).round()
+        : 100;
 
-    MockLearningRepository.instance.completeLesson(widget.lessonId, _lessonDetail.xpReward);
+    MockLearningRepository.instance.completeLesson(
+      widget.lessonId,
+      _lessonDetail.xpReward,
+    );
 
     final result = LessonResult(
       lessonId: widget.lessonId,
@@ -180,10 +216,7 @@ class _LessonPageState extends State<LessonPage> {
           child: Column(
             children: [
               // Progress Bar & Close button
-              LessonProgressBar(
-                progress: progress,
-                onClose: _handleExit,
-              ),
+              LessonProgressBar(progress: progress, onClose: _handleExit),
 
               const SizedBox(height: 12),
 
@@ -246,6 +279,19 @@ class _LessonPageState extends State<LessonPage> {
           _checkAnswer();
         },
       );
+    } else if (exercise is ListeningExercise) {
+      return _ListeningExerciseWidget(
+        exercise: exercise,
+        onChanged: (value) => setState(() => _listeningAnswer = value),
+      );
+    } else if (exercise is SpeakingExercise) {
+      return _SpeakingExerciseWidget(
+        exercise: exercise,
+        onDone: () {
+          setState(() => _speakingDone = true);
+          _checkAnswer();
+        },
+      );
     }
 
     return const SizedBox();
@@ -264,7 +310,9 @@ class _LessonPageState extends State<LessonPage> {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.divider.withValues(alpha: 0.5))),
+        border: Border(
+          top: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
+        ),
       ),
       child: ElevatedButton(
         onPressed: canCheck ? _checkAnswer : null,
@@ -290,4 +338,91 @@ class _LessonPageState extends State<LessonPage> {
       ),
     );
   }
+}
+
+class _ListeningExerciseWidget extends StatefulWidget {
+  const _ListeningExerciseWidget({
+    required this.exercise,
+    required this.onChanged,
+  });
+  final ListeningExercise exercise;
+  final ValueChanged<String> onChanged;
+  @override
+  State<_ListeningExerciseWidget> createState() =>
+      _ListeningExerciseWidgetState();
+}
+
+class _ListeningExerciseWidgetState extends State<_ListeningExerciseWidget> {
+  final _controller = TextEditingController();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 28),
+      Text(
+        widget.exercise.prompt,
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      const SizedBox(height: 28),
+      Center(
+        child: IconButton.filled(
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phát âm thanh mẫu chưa được cấu hình.'),
+            ),
+          ),
+          icon: const Icon(LucideIcons.volume2),
+          iconSize: 32,
+          tooltip: 'Nghe câu mẫu',
+        ),
+      ),
+      const SizedBox(height: 24),
+      TextField(
+        controller: _controller,
+        onChanged: widget.onChanged,
+        decoration: const InputDecoration(
+          hintText: 'Nhập từ bạn nghe được',
+          border: OutlineInputBorder(),
+        ),
+      ),
+    ],
+  );
+}
+
+class _SpeakingExerciseWidget extends StatelessWidget {
+  const _SpeakingExerciseWidget({required this.exercise, required this.onDone});
+  final SpeakingExercise exercise;
+  final VoidCallback onDone;
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text(
+        exercise.prompt,
+        style: Theme.of(context).textTheme.headlineSmall,
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 28),
+      Text(
+        exercise.phrase,
+        style: Theme.of(context).textTheme.headlineMedium
+            ?.copyWith(fontWeight: FontWeight.w700),
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 24),
+      const Text('Đọc câu này thành tiếng, sau đó nhấn hoàn thành.'),
+      const SizedBox(height: 24),
+      FilledButton.icon(
+        onPressed: onDone,
+        icon: const Icon(LucideIcons.mic),
+        label: const Text('HOÀN THÀNH LƯỢT ĐỌC'),
+      ),
+    ],
+  );
 }

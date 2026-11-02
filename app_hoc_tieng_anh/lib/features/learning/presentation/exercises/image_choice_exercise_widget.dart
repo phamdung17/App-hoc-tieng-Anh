@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/exercise_models.dart';
 
@@ -23,9 +25,9 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
         Text(
           exercise.prompt,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 16),
 
@@ -35,7 +37,10 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppRadii.card),
-            border: Border.all(color: AppColors.outline.withValues(alpha: 0.12), width: 1.5),
+            border: Border.all(
+              color: AppColors.outline.withValues(alpha: 0.12),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -55,7 +60,7 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.volume_up_rounded,
+                  LucideIcons.volume2,
                   color: AppColors.primaryDark,
                   size: 26,
                 ),
@@ -117,7 +122,9 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
                     color: isSelected ? AppColors.primaryLight : Colors.white,
                     borderRadius: BorderRadius.circular(AppRadii.card),
                     border: Border.all(
-                      color: isSelected ? AppColors.primaryDark : AppColors.outline.withValues(alpha: 0.12),
+                      color: isSelected
+                          ? AppColors.primaryDark
+                          : AppColors.outline.withValues(alpha: 0.12),
                       width: isSelected ? 2.5 : 1.5,
                     ),
                     boxShadow: [
@@ -133,10 +140,11 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (option.emoji != null) ...[
-                        Text(
-                          option.emoji!,
-                          style: const TextStyle(fontSize: 38),
+                      if (option.icon != null) ...[
+                        Icon(
+                          option.icon,
+                          size: 32,
+                          color: AppColors.primaryDark,
                         ),
                         const SizedBox(height: 8),
                       ],
@@ -145,8 +153,12 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                          color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          color: isSelected
+                              ? AppColors.primaryDark
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -160,4 +172,3 @@ class ImageChoiceExerciseWidget extends StatelessWidget {
     );
   }
 }
-

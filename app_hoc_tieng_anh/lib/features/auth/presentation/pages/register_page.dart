@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
@@ -63,14 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (!mounted) return;
-      context.go(AppRoutes.auth);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Tạo tài khoản thành công. Máy chủ chưa gửi email xác minh.',
-          ),
-        ),
-      );
+      context.go(AppRoutes.verifyEmail, extra: _emailController.text.trim());
     } on DioException catch (error) {
       if (!mounted) return;
       _showMessage(_messageForDioError(error));
@@ -575,15 +569,20 @@ class _AssetIcon extends StatelessWidget {
   final Color? color;
 
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(
-    asset,
-    width: width,
-    height: height,
-    colorFilter: color == null
-        ? null
-        : ColorFilter.mode(color!, BlendMode.srcIn),
-    excludeFromSemantics: true,
-  );
+  Widget build(BuildContext context) =>
+      Icon(_icon, size: width, color: color ?? AppColors.primaryDark);
+
+  IconData get _icon => switch (asset.split('/').last) {
+    'icon_user.svg' => LucideIcons.userRound,
+    'icon_register_mail.svg' => LucideIcons.mail,
+    'icon_register_lock.svg' => LucideIcons.lockKeyhole,
+    'icon_register_eye.svg' ||
+    'icon_register_eye_confirm.svg' => LucideIcons.eye,
+    'icon_shield_check.svg' => LucideIcons.shieldCheck,
+    'icon_register_arrow.svg' => LucideIcons.arrowRight,
+    'icon_register_apple.svg' => LucideIcons.apple,
+    _ => LucideIcons.circleHelp,
+  };
 }
 
 class _SocialButton extends StatelessWidget {

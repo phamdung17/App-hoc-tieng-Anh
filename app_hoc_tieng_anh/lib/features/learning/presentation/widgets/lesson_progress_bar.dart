@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../../../core/theme/app_theme.dart';
 
 class LessonProgressBar extends StatelessWidget {
@@ -22,7 +24,11 @@ class LessonProgressBar extends StatelessWidget {
           // Close button
           IconButton(
             onPressed: onClose,
-            icon: const Icon(Icons.close_rounded, size: 28, color: AppColors.textSecondary),
+            icon: const Icon(
+              LucideIcons.x,
+              size: 28,
+              color: AppColors.textSecondary,
+            ),
             tooltip: 'Thoát bài học',
           ),
           const SizedBox(width: 8),
@@ -41,7 +47,9 @@ class LessonProgressBar extends StatelessWidget {
                     return LinearProgressIndicator(
                       value: value,
                       backgroundColor: AppColors.divider.withValues(alpha: 0.5),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
                     );
                   },
                 ),
@@ -54,7 +62,7 @@ class LessonProgressBar extends StatelessWidget {
           // Hearts / Lives
           Row(
             children: [
-              const Icon(Icons.favorite_rounded, color: AppColors.coral, size: 22),
+              const Icon(LucideIcons.heart, color: AppColors.coral, size: 22),
               const SizedBox(width: 4),
               Text(
                 '$hearts',
@@ -71,4 +79,3 @@ class LessonProgressBar extends StatelessWidget {
     );
   }
 }
-

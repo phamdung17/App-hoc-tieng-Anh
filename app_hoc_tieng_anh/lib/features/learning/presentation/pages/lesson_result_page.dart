@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../app/router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/lesson_models.dart';
@@ -13,7 +15,9 @@ class LessonResultPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final minutes = result.durationSeconds ~/ 60;
     final seconds = result.durationSeconds % 60;
-    final timeFormatted = minutes > 0 ? '${minutes}p ${seconds}s' : '${seconds}s';
+    final timeFormatted = minutes > 0
+        ? '${minutes}p ${seconds}s'
+        : '${seconds}s';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -32,20 +36,21 @@ class LessonResultPage extends StatelessWidget {
                   width: 110,
                   height: 110,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8E1),
+                    color: AppColors.primaryLight,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFFB300).withValues(alpha: 0.3),
+                        color: AppColors.warning.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: const Center(
-                    child: Text(
-                      '🏆',
-                      style: TextStyle(fontSize: 54),
+                    child: Icon(
+                      LucideIcons.trophy,
+                      size: 54,
+                      color: AppColors.warning,
                     ),
                   ),
                 ),
@@ -83,9 +88,9 @@ class LessonResultPage extends StatelessWidget {
                     child: _StatCard(
                       label: 'TỔNG XP',
                       value: '+${result.xpEarned}',
-                      icon: Icons.bolt_rounded,
-                      color: const Color(0xFFFFA000),
-                      bgColor: const Color(0xFFFFFDE7),
+                      icon: LucideIcons.zap,
+                      color: AppColors.warning,
+                      bgColor: AppColors.background,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -93,7 +98,7 @@ class LessonResultPage extends StatelessWidget {
                     child: _StatCard(
                       label: 'CHÍNH XÁC',
                       value: '${result.accuracyPercentage}%',
-                      icon: Icons.gps_fixed_rounded,
+                      icon: LucideIcons.target,
                       color: AppColors.primary,
                       bgColor: AppColors.primaryLight,
                     ),
@@ -103,9 +108,9 @@ class LessonResultPage extends StatelessWidget {
                     child: _StatCard(
                       label: 'THỜI GIAN',
                       value: timeFormatted,
-                      icon: Icons.timer_rounded,
-                      color: const Color(0xFF1E88E5),
-                      bgColor: const Color(0xFFE3F2FD),
+                      icon: LucideIcons.timer,
+                      color: AppColors.info,
+                      bgColor: AppColors.primaryLight,
                     ),
                   ),
                 ],
@@ -115,11 +120,16 @@ class LessonResultPage extends StatelessWidget {
 
               // Streak Banner
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(AppRadii.card),
-                  border: Border.all(color: const Color(0xFFFFB74D).withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.3),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.03),
@@ -130,7 +140,11 @@ class LessonResultPage extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Text('🔥', style: TextStyle(fontSize: 32)),
+                    const Icon(
+                      LucideIcons.flame,
+                      size: 32,
+                      color: AppColors.coral,
+                    ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
@@ -141,7 +155,7 @@ class LessonResultPage extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFFE65100),
+                              color: AppColors.coral,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -244,4 +258,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-
