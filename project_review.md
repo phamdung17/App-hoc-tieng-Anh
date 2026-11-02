@@ -1,162 +1,137 @@
-# 📋 Review Dự Án: App Học Tiếng Anh + AI
+# Báo cáo trạng thái dự án
 
-## 1. Tổng Quan
+**Ngày rà soát:** 27/10/2026
+**Phạm vi:** Flutter app, FastAPI backend, cấu hình chạy, tests và tài liệu trong repository.
 
-| Thông tin | Chi tiết |
-|---|---|
-| **Tên dự án** | App học tiếng Anh + AI |
-| **Frontend** | Flutter (Dart 3.13.4) |
-| **Backend** | FastAPI + PostgreSQL + Redis + **Gemini API** |
-| **Trạng thái** | 🟡 **Giai đoạn triển khai** — Backend Phase 1 + Gemini integration hoàn thành, Flutter chưa bắt đầu |
+## Kết luận
 
-## 2. Kiến Trúc Tổng Thể
+Dự án đã có nền backend và khung Flutter ban đầu, nhưng **chưa hoàn thành theo đặc tả và chưa được xác minh chạy end-to-end**. Phần backend hiện có auth, scan AI, users và một số API vocab. Flutter mới có theme, router và giao diện đăng nhập/đăng ký; chưa kết nối backend và phần lớn màn hình vẫn là placeholder.
 
-```mermaid
-graph TD
-    A["Flutter App"] -->|REST API| B["FastAPI Backend"]
-    B --> C["PostgreSQL"]
-    B --> D["Redis"]
-    B -->|HTTP + API Key| E["Google Gemini API"]
-    B --> F["S3/R2 Storage"]
-    B --> G["Email / FCM"]
-    B --> H["ARQ Workers"]
-```
+Đặc tả kiến trúc feature-first và tách Flutter/backend vẫn là hướng phù hợp. Việc cần làm trước mắt là sửa cấu hình chạy backend, tạo migration đầu tiên, xác minh backend, rồi mới nối luồng auth Flutter.
 
-### Đánh giá kiến trúc: ⭐⭐⭐⭐⭐ (5/5)
-- **Ưu điểm**: Tách biệt rõ FE/BE, không để client gọi trực tiếp DB hay AI model
-- **Ưu điểm**: Backend là nguồn chính cho mọi logic nghiệp vụ (XP, streak, quota, SRS)
-- **Ưu điểm**: AI detection qua Gemini API — không cần GPU server, free tier đủ dùng
-- **Ưu điểm**: Gemini trả thêm IPA, nghĩa Việt, ví dụ câu — phong phú hơn YOLO-World
-- **Cần cải thiện**: Chưa có state management solution cho Flutter (Provider/Riverpod/Bloc?)
+## Tiến độ hiện tại
 
-## 3. Cấu Trúc Frontend (Flutter)
-
-### Tổ chức code: ⭐⭐⭐⭐⭐ (5/5)
-
-```
-lib/
-├── app/              # MaterialApp, router, navigation shell
-├── core/             # Network, storage, theme, widgets dùng chung
-└── features/         # 7 features theo domain
-    ├── auth/         # Đăng nhập/ký, guest, xác minh email
-    ├── learning/     # Lộ trình, bài học, 5 dạng bài tập
-    ├── scan/         # Camera AI, nhận diện vật thể
-    ├── vocabulary/   # Kho từ vựng
-    ├── review/       # Ôn tập SRS, flashcard
-    ├── profile/      # Hồ sơ, cài đặt
-    └── progress/     # XP, streak, mục tiêu
-```
-
-> [!TIP]
-> Mô hình **feature-first** với phân tầng `data/domain/presentation` là best practice cho Flutter. Rất tốt!
-
-### 18 giao diện đã lên kế hoạch
-
-| Nhóm | Giao diện | Số lượng |
+| Hạng mục | Trạng thái | Đã có |
 |---|---|---|
-| Auth & Onboarding | Welcome, Survey, Login/Register | 3 |
-| Learning | Bản đồ, Lesson shell, 5 dạng bài, Kết quả | 8 |
-| AI Scan | Camera, Kết quả nhận diện | 2 |
-| Vocabulary | Kho từ, Chi tiết từ | 2 |
-| Review | Practice Hub, Flashcard | 2 |
-| Profile | Hồ sơ/Thống kê/Cài đặt | 1 |
-| **Tổng** | | **18** |
+| Cấu trúc dự án | Đang triển khai | Flutter và FastAPI tách riêng; mã backend chia `core`, `modules`, `integrations`, `workers`. |
+| Backend nền tảng | Đã viết, chưa xác minh chạy | FastAPI app, settings, SQLAlchemy models, Redis client, exception handlers; đường dẫn Compose đã sửa. |
+| Auth backend | Đã triển khai một phần | Register, login, refresh, verify/resend email và endpoint thông tin user. |
+| AI scan backend | Đã triển khai luồng tạo scan | Kiểm tra user/quota, xử lý ảnh, Gemini, storage private, lưu scan và trả kết quả. |
+| Users backend | Đã triển khai cơ bản | Đọc/cập nhật profile, FCM token và xóa mềm tài khoản. |
+| Vocab backend | Đã triển khai đọc | Liệt kê, tìm kiếm, xem chi tiết từ. Chưa có luồng quản lý kho từ cá nhân đầy đủ. |
+| Integrations | Có code ban đầu | Gemini, S3-compatible storage, mailer và FCM adapter. Một số luồng cần credentials thật để chạy. |
+| Background worker | Có khung và một số tác vụ | Có tác vụ dọn tài sản scan/user; chưa được nối hoàn chỉnh vào các luồng nghiệp vụ. |
+| Database migration | Đã tạo, chưa apply | Migration đầu tiên cho users, words, scans và scan_items đã được viết; chưa chạy trên PostgreSQL. |
+| Flutter foundation | Đã có một phần | Riverpod dependency, ProviderScope, theme, GoRouter và cấu hình app. |
+| Flutter auth UI | UI có, chưa nối API | Có màn đăng nhập/đăng ký; chưa có repository/network/token flow. |
+| Các màn học, scan, ôn tập, profile | Chưa triển khai | Router còn dùng placeholder cho các màn này. |
+| Kiểm thử | Có test, chưa xác nhận pass | Có unit test Gemini/storage và integration test scan; chưa chạy được trong lần rà soát này. |
 
-## 4. Cấu Trúc Backend (FastAPI)
+## So với đặc tả
 
-### Tổ chức: ⭐⭐⭐⭐ (4/5)
+### Đã đi đúng hướng
 
+- Flutter là client gọi REST API; backend giữ logic nghiệp vụ và gọi Gemini.
+- Backend có kiểm tra email xác minh cho chức năng AI và giới hạn quota scan.
+- Ảnh scan lưu ở object storage private; database lưu object key.
+- Có phân lớp tính năng ở backend và dependency Riverpod/GoRouter ở Flutter.
+- Scan dùng Gemini để nhận diện và trả dữ liệu từ vựng có cấu trúc.
+
+### Còn thiếu so với mục tiêu sản phẩm
+
+- Chưa có API learning/path/lesson/exercises, progress, review/SRS và practice.
+- Chưa có đầy đủ scan history/detail, lưu từ scan, sửa nhãn và báo kết quả sai.
+- Chưa có UI onboarding, lộ trình, bài học, 5 dạng bài tập, camera/kết quả scan, kho từ, flashcard, tiến độ và hồ sơ.
+- Flutter chưa có API client, xử lý access/refresh token, secure token storage hay redirect theo trạng thái đăng nhập.
+- Chưa có seed data bài học/bài tập; migration đầu tiên đã tạo nhưng chưa apply để dựng database mới.
+- Các quy tắc XP, ngưỡng đánh giá speaking và cách sửa nhãn vẫn cần chốt thống nhất trước khi làm các luồng liên quan.
+
+## Điểm cần xử lý trước khi chạy thử
+
+### 1. Xác minh Docker Compose sau khi sửa đường dẫn
+
+Đã sửa `docker-compose.yml` để dùng `./backend_app/backend` cho build context, `.env` và volume. Cần chạy Compose ở máy có Docker để xác nhận build và health checks.
+
+### 2. Apply và xác minh migration database
+
+Đã thêm `20261027_0001_initial_schema.py` cho các model hiện có. Cần chạy `alembic upgrade head` trên database sạch và xác nhận đủ bảng/index/foreign key.
+
+### 3. Dùng asyncpg khi chạy migration online
+
+Alembic online dùng `async_engine_from_config`, nên URL cần giữ driver `postgresql+asyncpg`. Cấu hình đã được sửa để không đổi sang `psycopg2`; cần chạy migration để xác nhận.
+
+### 4. Cần xác minh scan và quota sau các thay đổi gần đây
+
+Luồng scan đã được sửa để trả items, dọn ảnh khi xử lý lỗi và hoàn quota đúng key đã reserve. Cần có test xác nhận các trường hợp thành công, không có vật thể, Gemini lỗi, lỗi storage/DB và request đi qua nửa đêm.
+
+### 5. Cấu hình chạy thật còn phụ thuộc dịch vụ ngoài
+
+Backend cần `.env` hợp lệ, PostgreSQL, Redis, Gemini API key và thông tin S3/R2. Email verification cần Resend key để gửi thật; link xác minh hiện dùng domain mẫu nên cần cấu hình domain app trước khi phát hành.
+
+## Thứ tự triển khai tiếp theo
+
+### Bước 1 — Làm cho backend có thể khởi động lặp lại
+
+1. ✅ Sửa đường dẫn Compose sang `backend_app/backend` và bỏ phụ thuộc `poetry.lock` chưa có trong Dockerfile.
+2. ✅ Tạo `.env` local từ `.env.example`, tạo JWT secret dev ngẫu nhiên và để trống credentials bên ngoài. File `.env` được Git ignore.
+3. ✅ Tạo migration đầu tiên và chỉnh Alembic online để dùng asyncpg. **Còn chạy migration trên database sạch.**
+4. ⏳ Kiểm tra `/health`, auth và kết nối database/Redis.
+
+**Trạng thái:** Đã hoàn tất phần cấu hình và chuẩn bị; chưa thể xác nhận Compose/migration/health vì môi trường hiện tại không có Docker CLI/Python runtime.
+
+**Lệnh chạy từ thư mục gốc repository khi có Docker:**
+
+```powershell
+docker compose up -d --build postgres redis
+docker compose run --rm backend alembic upgrade head
+docker compose up -d backend
+docker compose ps
+Invoke-RestMethod http://localhost:8000/health
 ```
-backend/app/
-├── core/             # Config, security, deps, errors
-├── modules/          # 10 modules nghiệp vụ
-│   ├── auth/         ├── users/        ├── content/
-│   ├── learning/     ├── progress/     ├── scan/
-│   ├── vocab/        ├── review/       ├── practice/
-│   └── notifications/
-├── integrations/     # Detector, storage, mailer, FCM
-├── workers/          # ARQ background jobs
-└── seed_data/        # Nội dung học tĩnh
-```
 
-### Quy tắc nghiệp vụ quan trọng
-- ✅ PostgreSQL là source of truth
-- ✅ Nội dung học được seed, không sinh tự động bằng LLM
-- ✅ AI features yêu cầu email xác minh
-- ✅ Quota, XP, streak do backend quản lý
-- ✅ Ảnh scan dùng presigned URL, ảnh học dùng public CDN
+### Bước 2 — Chạy và củng cố backend tests
 
-## 5. Điểm Mạnh
+1. Chạy toàn bộ unit tests.
+2. Chạy integration tests với database/Redis test hoặc mocks được override đúng cách.
+3. Bổ sung assertions cho status code và response body của scan success; thêm ca no-object, quota, email chưa xác minh và lỗi Gemini/storage.
+4. Sửa lỗi phát hiện được trước khi bắt đầu nối Flutter.
 
-| # | Điểm mạnh |
-|---|---|
-| 1 | **Tài liệu thiết kế rất chi tiết** — FileMap.md mô tả đầy đủ 253 dòng, rõ ràng từ kiến trúc đến từng file dự kiến |
-| 2 | **Kiến trúc clean** — Tách FE/BE rõ ràng, feature-first, tầng data/domain/presentation |
-| 3 | **Plugin research kỹ** — Chỉ ra đúng plugin cho từng tính năng, có chú thích khi nào cần và không cần |
-| 4 | **Bảo mật tốt** — Token riêng, quyền AI server-side, không lưu binary vào DB |
-| 5 | **Nhận diện mâu thuẫn** — Đã ghi nhận sự khác nhau FE/BE (XP +5 vs +10, ngưỡng speaking 75% vs 0.6) |
+**Hoàn tất khi:** test suite chạy ổn định trong môi trường có dependency, không dựa vào API key/dịch vụ production.
 
-## 6. Điểm Cần Cải Thiện
+### Bước 3 — Hoàn thiện Flutter auth và nền tảng mạng
 
-> [!WARNING]
-> ### Vấn đề quan trọng
+1. Tạo API client và chuẩn hóa lỗi theo response backend.
+2. Tạo secure token storage và luồng refresh token.
+3. Tạo auth repository/provider, nối login/register/verify.
+4. Thêm redirect theo trạng thái chưa đăng nhập, chưa xác minh và đã xác minh.
+5. Kiểm tra đăng nhập từ Flutter tới backend local/dev.
 
-| # | Vấn đề | Mức độ | Gợi ý |
-|---|---|---|---|
-| 1 | **Chưa có code Flutter** — Tất cả features chỉ là `.gitkeep`, main.dart là counter demo | 🔴 Cao | Đã chọn Riverpod — bắt đầu code core + auth Flutter |
-| 2 | **Thiếu state management** — Chưa chọn Bloc/Riverpod/Provider | ✅ Đã giải quyết | **Chọn Riverpod 2.x** |
-| 3 | **Thiếu dependency injection** — Chưa có `get_it` hay `injectable` | 🟡 TB | Riverpod thay thế DI, không cần get_it |
-| 4 | **`main.dart` có lỗi cú pháp** — `colorScheme: .fromSeed(...)`, `mainAxisAlignment: .center` | ✅ Đã sửa | Ngày 6 |
-| 5 | **Chưa có Docker Compose** — Backend cần PG, Redis container | ✅ Đã tạo | `docker-compose.yml` ở root |
-| 6 | **Chưa có `pyproject.toml`** cho backend | ✅ Đã tạo | Poetry + đầy đủ dependencies |
-| 7 | **Mâu thuẫn chưa giải quyết** — XP lưu từ, ngưỡng speaking, sửa nhãn | 🟢 Thấp | Chốt trước khi code features liên quan |
+**Hoàn tất khi:** người dùng có thể đăng ký, đăng nhập, giữ phiên và đăng xuất qua app.
 
-## 7. Lộ Trình Triển Khai Gợi Ý
+### Bước 4 — Chốt hợp đồng nghiệp vụ và hoàn thiện API
 
-```mermaid
-graph LR
-    P1["Phase 1\nNền tảng"] --> P2["Phase 2\nAuth + Learning"] --> P3["Phase 3\nAI Scan"] --> P4["Phase 4\nÔn tập & Polish"]
-    
-    style P1 fill:#4CAF50,color:#fff
-    style P2 fill:#2196F3,color:#fff
-    style P3 fill:#FF9800,color:#fff
-    style P4 fill:#9C27B0,color:#fff
-```
+1. Chốt cách tính XP, ngưỡng speaking và quy tắc sửa nhãn.
+2. Triển khai learning/content và tiến độ trước để Flutter có dữ liệu học.
+3. Triển khai scan history/detail và các thao tác lưu/báo/sửa theo đặc tả.
+4. Triển khai review/SRS, practice và notification sau khi các model/luồng học đã ổn định.
 
-### Phase 1 — Nền tảng ✅ Hoàn thành
-- [x] Chọn state management → **Riverpod 2.x**
-- [x] Backend: `docker-compose.yml`, `pyproject.toml`, `app/main.py`
-- [x] Backend: Gemini API integration (`integrations/gemini/`)
-- [x] Backend: Database models (User, Word, Scan, ScanItem) + Alembic
-- [x] Backend: Auth module (register/login/refresh/verify-email)
-- [x] Backend: Scan module (POST /scans với Gemini + Redis quota)
-- [ ] Flutter: `core/theme`, `core/network`, `core/storage` ← **đang làm**
-- [ ] Flutter: `app.dart` + `router.dart` + `main_shell.dart` ← **đang làm**
+### Bước 5 — Làm UI theo thứ tự phụ thuộc
 
-### Phase 2 — Auth + Learning
-- [ ] UI: Welcome → Survey → Auth → Learning Path → Lesson
-- [ ] Backend: Auth endpoints, learning/progress APIs
-- [ ] 5 dạng bài tập + lesson shell
+1. Welcome/onboarding và auth.
+2. Learning path, lesson shell, 5 dạng bài tập và kết quả.
+3. Camera scan và màn kết quả.
+4. Kho từ, flashcard/review, profile/progress.
+5. Bổ sung trạng thái loading/error/empty, quyền camera/micro và polish.
 
-### Phase 3 — AI Scan + Vocabulary
-- [ ] Camera + scan + kết quả nhận diện
-- [ ] Kho từ vựng
-- [ ] Backend: YOLO-World integration, vocab APIs
+## Tình trạng kiểm tra tại lần rà soát này
 
-### Phase 4 — Review + Profile + Polish
-- [ ] Flashcard SRS + Practice Hub
-- [ ] Profile + Settings
-- [ ] Push notifications, animations, performance
+- Bước 1: đã sửa đường dẫn Compose/Dockerfile, tạo local `.env`, thêm migration đầu tiên, sửa Alembic online giữ asyncpg và chuyển hướng dẫn migration ra khỏi file `.py` trong thư mục revisions.
+- Chưa xác nhận được backend tests, migration hoặc Docker Compose: Python/Docker CLI không có trong PATH của môi trường rà soát.
+- Đã thử `flutter analyze`, nhưng lệnh không trả kết quả trong hơn hai phút và đã dừng; chưa có kết luận analyzer hoặc widget test pass.
+- Vì vậy trạng thái “đã triển khai” trong bảng mô tả **code đã có**, không đồng nghĩa đã xác nhận chạy ổn định.
 
-## 8. Kết Luận
+## Tài liệu cần giữ đồng bộ
 
-| Tiêu chí | Đánh giá |
-|---|---|
-| Thiết kế & tài liệu | ⭐⭐⭐⭐⭐ Xuất sắc |
-| Kiến trúc code | ⭐⭐⭐⭐ Rất tốt |
-| Triển khai Backend | ⭐⭐⭐⭐ Phase 1 hoàn thành — Auth + Gemini + DB |
-| Triển khai Flutter | ⭐ Chưa bắt đầu |
-| Khả thi để hoàn thiện | ⭐⭐⭐⭐ Cao — đang theo đúng kế hoạch |
-
-> [!IMPORTANT]
-> Backend **Phase 1 đã hoàn thành**: Auth, Gemini scan, Redis quota, Docker Compose. Bước tiếp theo quan trọng nhất là **bắt đầu Flutter core** (theme, router, network layer) và chạy **Alembic migration** khi có Docker.
+- Cập nhật [weekly_implementation_plan.md](weekly_implementation_plan.md) khi hoàn thành từng bước ở trên.
+- Cập nhật [FIleMap.md](app_hoc_tieng_anh/FIleMap.md) và README của backend khi cấu trúc/API thay đổi.
+- Không đánh dấu một phase hoàn thành cho tới khi có migration, test và luồng chạy được tương ứng.

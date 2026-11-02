@@ -9,8 +9,8 @@ WORKDIR /app
 # Cài Poetry
 RUN pip install --no-cache-dir poetry==1.8.*
 
-# Copy dependency files trước (cache layer)
-COPY pyproject.toml poetry.lock* ./
+# Copy dependency manifest trước (repository chưa có poetry.lock)
+COPY pyproject.toml ./
 
 # Cài production deps (không cài dev deps)
 RUN poetry config virtualenvs.create false \

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
+import '../features/challenge/presentation/pages/daily_challenge_page.dart';
 import '../features/learning/domain/lesson_models.dart';
 import '../features/learning/presentation/pages/learning_path_page.dart';
 import '../features/learning/presentation/pages/lesson_page.dart';
@@ -32,6 +33,7 @@ class AppRoutes {
   static const verifyEmail = '/verify-email';
   static const home = '/home';
   static const learning = '/home/learning';
+  static const dailyChallenge = '/daily-challenge';
   static const vocabulary = '/home/vocabulary';
   static const review = '/home/review';
   static const profile = '/home/profile';
@@ -133,6 +135,12 @@ GoRouter createRouter() {
           }
           return ScanResultPage(result: result);
         },
+      ),
+
+      GoRoute(
+        path: AppRoutes.dailyChallenge,
+        name: 'dailyChallenge',
+        builder: (context, state) => const DailyChallengePage(),
       ),
 
       // Word detail

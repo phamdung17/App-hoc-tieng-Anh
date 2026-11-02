@@ -14,3 +14,16 @@ Các nhóm bảng: users/profiles/tokens, course/unit/lesson/exercise, attempts/
 - Không commit migration chứa URL/credential hoặc dữ liệu cá nhân.
 
 Kiểm tra chain `alembic history` và chạy upgrade từ base trước khi merge.
+
+## Migration hiện có
+
+- `20261027_0001_initial_schema.py`: tạo `users`, `words`, `scans` và `scan_items`.
+
+Không đặt tài liệu hướng dẫn dưới dạng `.py` trong thư mục này: Alembic quét các file Python ở đây như migration revisions.
+
+Chạy từ thư mục gốc repository:
+
+```powershell
+docker compose up -d --build postgres redis
+docker compose run --rm backend alembic upgrade head
+```

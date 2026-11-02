@@ -2,7 +2,7 @@
 # Không có container YOLO-World — AI scan qua Gemini API (external HTTP call)
 #
 # Sử dụng:
-#   cp backend/.env.example backend/.env  # Điền giá trị thật
+#   Copy-Item backend_app/backend/.env.example backend_app/backend/.env
 #   docker compose up -d
 #   docker compose logs -f backend
 
@@ -10,13 +10,13 @@ services:
   # ── FastAPI Backend ────────────────────────────────────────────────────
   backend:
     build:
-      context: ./backend
+      context: ./backend_app/backend
       dockerfile: Dockerfile
     container_name: english_ai_backend
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - ./backend_app/backend/.env
     environment:
       # Override DATABASE_URL để trỏ vào service postgres (hostname = "postgres")
       - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/english_ai
@@ -27,7 +27,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend:/app   # Hot reload trong dev
+      - ./backend_app/backend:/app   # Hot reload trong dev
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
 
@@ -68,11 +68,11 @@ services:
   # Uncomment sau khi có workers/main.py
   # worker:
   #   build:
-  #     context: ./backend
+  #     context: ./backend_app/backend
   #     dockerfile: Dockerfile
   #   container_name: english_ai_worker
   #   env_file:
-  #     - ./backend/.env
+  #     - ./backend_app/backend/.env
   #   environment:
   #     - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/english_ai
   #     - REDIS_URL=redis://redis:6379/0
