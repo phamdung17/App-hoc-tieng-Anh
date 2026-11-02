@@ -17,6 +17,7 @@ import '../features/review/presentation/pages/review_page.dart';
 import '../features/scan/domain/scan_models.dart';
 import '../features/scan/presentation/pages/scan_camera_page.dart';
 import '../features/scan/presentation/pages/scan_result_page.dart';
+import '../features/vocabulary/presentation/pages/vocabulary_detail_page.dart';
 import '../features/vocabulary/presentation/pages/vocabulary_page.dart';
 
 // ── Route names (constants để tránh typo) ────────────────────────────────────
@@ -140,7 +141,7 @@ GoRouter createRouter() {
         name: 'wordDetail',
         builder: (context, state) {
           final wordId = state.pathParameters['id'] ?? '';
-          return _PlaceholderPage(title: 'Từ: $wordId');
+          return VocabularyDetailPage(wordId: wordId);
         },
       ),
 

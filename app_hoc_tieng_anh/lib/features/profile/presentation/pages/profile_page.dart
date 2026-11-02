@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../learning/data/mock_learning_repository.dart';
+import '../../../vocabulary/data/mock_vocabulary_repository.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -93,10 +94,10 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: _StatTile(
                     emoji: '📚',
-                    title: '28 Từ',
+                    title: '${MockVocabularyRepository.instance.getWords().length} Từ',
                     subtitle: 'Đã tích lũy',
                   ),
                 ),

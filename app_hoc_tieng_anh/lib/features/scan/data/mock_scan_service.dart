@@ -1,4 +1,5 @@
 import '../domain/scan_models.dart';
+import '../../vocabulary/data/mock_vocabulary_repository.dart';
 
 class MockScanService {
   MockScanService._();
@@ -107,6 +108,12 @@ class MockScanService {
     if (!savedWordIds.contains(wordId)) {
       savedWordIds.add(wordId);
     }
+  }
+
+  /// Lưu từ từ kết quả scan vào kho từ vựng.
+  void saveDetectedObject(DetectedObject obj) {
+    savedWordIds.add(obj.id);
+    MockVocabularyRepository.instance.addFromScan(obj);
   }
 }
 

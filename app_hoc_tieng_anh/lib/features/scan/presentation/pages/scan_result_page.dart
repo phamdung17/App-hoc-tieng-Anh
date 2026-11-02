@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_scan_service.dart';
 import '../../domain/scan_models.dart';
+import '../../../vocabulary/data/mock_vocabulary_repository.dart';
 import '../widgets/detection_overlay.dart';
 
 class ScanResultPage extends StatefulWidget {
@@ -23,11 +24,11 @@ class _ScanResultPageState extends State<ScanResultPage> {
   void initState() {
     super.initState();
     _selectedObject = widget.result.detectedObjects.first;
-    _isSaved = MockScanService.instance.savedWordIds.contains(_selectedObject.id);
+    _isSaved = MockVocabularyRepository.instance.isSaved(_selectedObject.id);
   }
 
   void _saveWord() {
-    MockScanService.instance.saveWord(_selectedObject.id);
+    MockScanService.instance.saveDetectedObject(_selectedObject);
     setState(() {
       _isSaved = true;
     });
@@ -102,7 +103,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       onSelectObject: (obj) {
                         setState(() {
                           _selectedObject = obj;
-                          _isSaved = MockScanService.instance.savedWordIds.contains(obj.id);
+                          _isSaved = MockVocabularyRepository.instance.isSaved(obj.id);
                         });
                       },
                     ),
