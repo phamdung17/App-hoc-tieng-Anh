@@ -23,6 +23,18 @@ class VocabularyWord {
   final String source;
   final String note;
 
+  factory VocabularyWord.fromApi(Map<String, dynamic> json) => VocabularyWord(
+    id: json['id']?.toString() ?? '',
+    word: json['label'] as String? ?? '',
+    ipa: json['ipa'] as String? ?? '',
+    meaningVi: json['meaning_vi'] as String? ?? '',
+    partOfSpeech: json['pos'] as String? ?? '',
+    exampleEn: json['example_en'] as String? ?? '',
+    exampleVi: json['example_vi'] as String? ?? '',
+    topic: json['topic'] as String? ?? '',
+    source: 'AI Scan',
+  );
+
   VocabularyWord copyWith({String? note}) => VocabularyWord(
     id: id,
     word: word,

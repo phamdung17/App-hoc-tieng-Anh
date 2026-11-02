@@ -18,6 +18,7 @@ import '../features/learning/presentation/pages/learning_path_page.dart';
 import '../features/learning/presentation/pages/lesson_page.dart';
 import '../features/learning/presentation/pages/lesson_result_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
+import '../features/review/presentation/pages/practice_hub_page.dart';
 import '../features/review/presentation/pages/review_page.dart';
 import '../features/scan/domain/scan_models.dart';
 import '../features/scan/presentation/pages/scan_camera_page.dart';
@@ -184,7 +185,7 @@ GoRouter createRouter() {
           GoRoute(
             path: AppRoutes.review,
             name: 'review',
-            builder: (context, state) => const ReviewPage(),
+            builder: (context, state) => const PracticeHubPage(),
           ),
           GoRoute(
             path: AppRoutes.profile,

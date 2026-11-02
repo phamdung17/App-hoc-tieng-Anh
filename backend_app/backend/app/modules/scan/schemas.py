@@ -59,3 +59,23 @@ class QuotaResponse(BaseModel):
     limit: int
     remaining: int
     reset_at: str                  # ISO 8601 timestamp — thời điểm reset quota
+
+
+class SaveScanItemRequest(BaseModel):
+    is_saved: bool
+
+
+class SavedWordResponse(BaseModel):
+    id: uuid.UUID
+    word_id: uuid.UUID | None = None
+    label: str
+    ipa: str
+    pos: str
+    meaning_vi: str
+    example_en: str
+    example_vi: str
+    topic: str
+    is_saved: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

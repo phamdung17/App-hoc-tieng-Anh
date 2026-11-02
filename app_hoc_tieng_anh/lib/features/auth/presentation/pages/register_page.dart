@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -54,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() => _isSubmitting = true);
     try {
-      await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post<Map<String, dynamic>>(
         '/auth/register',
         data: {
           'display_name': _nameController.text.trim(),
@@ -62,6 +63,11 @@ class _RegisterPageState extends State<RegisterPage> {
           'password': _passwordController.text,
         },
       );
+
+      final tokens = response.data?['tokens'];
+      if (tokens is Map<String, dynamic>) {
+        await AppApi.instance.saveTokens(tokens);
+      }
 
       if (!mounted) return;
       context.go(AppRoutes.verifyEmail, extra: _emailController.text.trim());

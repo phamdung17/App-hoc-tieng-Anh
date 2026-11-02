@@ -3,8 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../data/mock_vocabulary_repository.dart';
+import '../../../scan/data/scan_api_service.dart';
 import '../../domain/vocabulary_word.dart';
 
 class VocabularyDetailPage extends StatefulWidget {
@@ -18,13 +19,28 @@ class VocabularyDetailPage extends StatefulWidget {
 }
 
 class _VocabularyDetailPageState extends State<VocabularyDetailPage> {
-  final _repository = MockVocabularyRepository.instance;
   late VocabularyWord? _word;
 
   @override
   void initState() {
     super.initState();
-    _word = _repository.getById(widget.wordId) ?? widget.word;
+    _word = widget.word;
+    if (_word == null) _loadWord();
+  }
+
+  Future<void> _loadWord() async {
+    try {
+      final response = await AppApi.instance.dio.get<List<dynamic>>('/scans/saved-words');
+      final words = (response.data ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(VocabularyWord.fromApi)
+          .toList();
+      final matches = words.where((entry) => entry.id == widget.wordId);
+      final found = matches.isEmpty ? null : matches.first;
+      if (mounted) setState(() => _word = found);
+    } catch (_) {
+      if (mounted) setState(() => _word = null);
+    }
   }
 
   Future<void> _editNote() async {
@@ -90,8 +106,7 @@ class _VocabularyDetailPageState extends State<VocabularyDetailPage> {
     );
     controller.dispose();
     if (!mounted || note == null) return;
-    _repository.updateNote(word.id, note);
-    setState(() => _word = _repository.getById(word.id));
+    setState(() => _word = word.copyWith(note: note));
   }
 
   Future<void> _deleteWord() async {
@@ -118,8 +133,16 @@ class _VocabularyDetailPageState extends State<VocabularyDetailPage> {
       ),
     );
     if (shouldDelete != true || !mounted) return;
-    _repository.delete(word.id);
-    context.go(AppRoutes.vocabulary);
+    try {
+      await ScanApiService.instance.setSaved(word.id, false);
+      if (mounted) context.go(AppRoutes.vocabulary);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể xóa từ khỏi kho. Hãy thử lại.')),
+        );
+      }
+    }
   }
 
   @override

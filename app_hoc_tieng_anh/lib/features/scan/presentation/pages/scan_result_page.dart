@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../data/mock_scan_service.dart';
+import '../../data/scan_api_service.dart';
 import '../../domain/scan_models.dart';
 import '../widgets/detection_overlay.dart';
 
@@ -33,39 +33,67 @@ class _ScanResultPageState extends State<ScanResultPage> {
   @override
   void initState() {
     super.initState();
-    _selectedObject = widget.result.detectedObjects.first;
-    _isSaved = MockScanService.instance.savedWordIds.contains(
-      _selectedObject.id,
-    );
+    _selectedObject = widget.result.detectedObjects.isEmpty
+        ? const DetectedObject(
+            id: '', label: '', ipa: '', partOfSpeech: '', meaningVi: '',
+            exampleEn: '', exampleVi: '', confidence: 0,
+            box: BoundingBox(x: 0, y: 0, width: 0, height: 0),
+          )
+        : widget.result.detectedObjects.first;
+    _isSaved = _selectedObject.isSaved;
   }
 
-  void _saveWord() {
-    MockScanService.instance.saveWord(_selectedObject.id);
-    setState(() {
-      _isSaved = true;
-    });
+  Future<void> _saveWord() async {
+    try {
+      await ScanApiService.instance.setSaved(_selectedObject.id, !_isSaved);
+      if (!mounted) return;
+      setState(() => _isSaved = !_isSaved);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.primaryDark,
-        content: Row(
-          children: [
-            const Icon(LucideIcons.circleCheck, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Đã lưu "${_selectedObject.label}" vào kho từ vựng của bạn!',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.primaryDark,
+          content: Row(
+            children: [
+              const Icon(LucideIcons.circleCheck, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(_isSaved
+                    ? 'Đã lưu “${_selectedObject.label}” vào kho từ vựng.'
+                    : 'Đã xóa “${_selectedObject.label}” khỏi kho từ vựng.'),
               ),
-            ),
-          ],
+            ],
+          ),
+          duration: const Duration(seconds: 2),
         ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không lưu được từ. Hãy đăng nhập rồi thử lại.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.result.noObjects) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Kết quả nhận diện')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(LucideIcons.scanSearch, size: 64, color: AppColors.textHint),
+              const SizedBox(height: 16),
+              const Text('Không tìm thấy vật thể trong ảnh. Hãy thử ảnh khác.'),
+              const SizedBox(height: 16),
+              FilledButton(onPressed: () => context.pop(), child: const Text('Quét ảnh khác')),
+            ]),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -118,8 +146,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       onSelectObject: (obj) {
                         setState(() {
                           _selectedObject = obj;
-                          _isSaved = MockScanService.instance.savedWordIds
-                              .contains(obj.id);
+                          _isSaved = obj.isSaved;
                         });
                       },
                     ),

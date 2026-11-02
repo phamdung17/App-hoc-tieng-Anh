@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../data/mock_scan_service.dart';
+import '../../data/scan_api_service.dart';
 import '../widgets/scan_quota_badge.dart';
 
 class ScanCameraPage extends StatefulWidget {
@@ -20,6 +21,7 @@ class _ScanCameraPageState extends State<ScanCameraPage>
   bool _isAnalyzing = false;
   String _analyzingStatus = 'Đang kết nối AI...';
   String _selectedSample = 'coffee';
+  int _remainingQuota = 0;
 
   late AnimationController _scanAnimController;
   late Animation<double> _scanAnimation;
@@ -27,6 +29,7 @@ class _ScanCameraPageState extends State<ScanCameraPage>
   @override
   void initState() {
     super.initState();
+    _loadQuota();
     _scanAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -37,6 +40,20 @@ class _ScanCameraPageState extends State<ScanCameraPage>
     );
   }
 
+  Future<void> _loadQuota() async {
+    try {
+      final quota = await ScanApiService.instance.getQuota();
+      if (mounted) setState(() => _remainingQuota = quota.remaining);
+    } on DioException catch (error) {
+      if (!mounted) return;
+      if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng nhập và xác minh email để dùng AI Scan.')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _scanAnimController.dispose();
@@ -44,8 +61,7 @@ class _ScanCameraPageState extends State<ScanCameraPage>
   }
 
   Future<void> _processScan({
-    String? imagePath,
-    required String sampleType,
+    required String imagePath,
   }) async {
     setState(() {
       _isAnalyzing = true;
@@ -53,19 +69,27 @@ class _ScanCameraPageState extends State<ScanCameraPage>
     });
 
     try {
-      final result = await MockScanService.instance.analyzeObject(
-        imagePath: imagePath,
-        sampleType: sampleType,
-      );
+      final result = await ScanApiService.instance.scanImage(imagePath);
+      if (mounted) setState(() => _remainingQuota = result.remainingQuota);
 
       if (!mounted) return;
       context.push('/scan-result', extra: result);
-    } catch (_) {
+    } on DioException catch (error) {
       if (!mounted) return;
+      final status = error.response?.statusCode;
+      final detail = error.response?.data is Map<String, dynamic>
+          ? (error.response!.data as Map<String, dynamic>)['detail']
+          : null;
+      final code = detail is Map<String, dynamic> ? detail['code'] : null;
+      final message = status == 401 || code == 'AUTH_REQUIRED_FOR_AI'
+          ? 'Đăng nhập để sử dụng AI Scan.'
+          : code == 'EMAIL_NOT_VERIFIED'
+          ? 'Hãy xác minh email trước khi sử dụng AI Scan.'
+          : status == 429
+          ? 'Bạn đã dùng hết lượt quét hôm nay.'
+          : 'Không thể phân tích ảnh. Kiểm tra kết nối rồi thử lại.';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể phân tích ảnh lúc này. Vui lòng thử lại.'),
-        ),
+        SnackBar(content: Text(message)),
       );
     } finally {
       if (mounted) {
@@ -80,18 +104,18 @@ class _ScanCameraPageState extends State<ScanCameraPage>
     try {
       final picked = await _picker.pickImage(source: source);
       if (picked != null) {
-        await _processScan(imagePath: picked.path, sampleType: _selectedSample);
+        await _processScan(imagePath: picked.path);
       }
     } catch (e) {
-      // In case emulator or permissions issues occur, fallback to sample object smoothly
-      _processScan(sampleType: _selectedSample);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không mở được ảnh hoặc camera.')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final remainingQuota = MockScanService.instance.remainingQuota;
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -193,9 +217,9 @@ class _ScanCameraPageState extends State<ScanCameraPage>
                       size: 28,
                     ),
                   ),
-                  ScanQuotaBadge(remaining: remainingQuota),
+                  ScanQuotaBadge(remaining: _remainingQuota),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: null,
                     icon: const Icon(
                       LucideIcons.zapOff,
                       color: Colors.white,
@@ -283,7 +307,7 @@ class _ScanCameraPageState extends State<ScanCameraPage>
 
                   // Big Shutter Button
                   GestureDetector(
-                    onTap: () => _processScan(sampleType: _selectedSample),
+                    onTap: () => _pickImage(ImageSource.camera),
                     child: Container(
                       width: 78,
                       height: 78,

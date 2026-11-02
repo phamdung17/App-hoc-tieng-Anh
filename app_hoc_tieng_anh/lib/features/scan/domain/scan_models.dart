@@ -24,6 +24,8 @@ class DetectedObject {
   final String exampleVi;
   final double confidence;
   final BoundingBox box;
+  final bool isSaved;
+  final String? wordId;
 
   const DetectedObject({
     required this.id,
@@ -35,6 +37,8 @@ class DetectedObject {
     required this.exampleVi,
     required this.confidence,
     required this.box,
+    this.isSaved = false,
+    this.wordId,
   });
 }
 
@@ -44,6 +48,8 @@ class ScanResult {
   final String? sampleKey;
   final List<DetectedObject> detectedObjects;
   final int remainingQuota;
+  final String? imageUrl;
+  final bool noObjects;
 
   const ScanResult({
     required this.id,
@@ -51,5 +57,7 @@ class ScanResult {
     this.sampleKey,
     required this.detectedObjects,
     this.remainingQuota = 8,
+    this.imageUrl,
+    this.noObjects = false,
   });
 }

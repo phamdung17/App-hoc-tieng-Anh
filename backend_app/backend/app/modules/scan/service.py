@@ -30,6 +30,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.models.scan import Scan, ScanItem
 from app.core.models.word import Word
+from app.integrations.storage.client import (
+    create_private_image_url,
+    upload_private_image,
+)
 from app.integrations.gemini import (
     GeminiClient,
     GeminiInvalidResponseError,
@@ -100,7 +104,7 @@ class ScanService:
 
         # ── Step 4: Upload ảnh vào storage ───────────────────────────────
         image_key = await self._upload_image(user_id, processed_bytes, mime_type)
-        image_url = self._get_presigned_url(image_key)
+        image_url = await create_private_image_url(image_key)
 
         # ── Step 5: Gọi Gemini API ────────────────────────────────────────
         detected_objects = await self._call_gemini(processed_bytes, mime_type)
@@ -203,20 +207,11 @@ class ScanService:
     async def _upload_image(
         self, user_id: uuid.UUID, image_bytes: bytes, mime_type: str
     ) -> str:
-        """
-        Upload ảnh lên storage. Trả về storage key.
-        TODO: Implement thật với boto3/S3 client.
-        """
-        # Placeholder — sẽ implement với StorageClient
+        """Upload normalized image bytes to the configured private S3 bucket."""
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         key = f"scans/{user_id}/{timestamp}_{uuid.uuid4().hex[:8]}.jpg"
-        logger.debug("TODO: upload image to storage key=%s", key)
+        await upload_private_image(key, image_bytes, mime_type)
         return key
-
-    def _get_presigned_url(self, image_key: str) -> str:
-        """Tạo presigned URL cho ảnh. TODO: implement với StorageClient."""
-        # Placeholder
-        return f"https://placeholder-storage.example.com/{image_key}"
 
     async def _call_gemini(
         self, image_bytes: bytes, mime_type: str

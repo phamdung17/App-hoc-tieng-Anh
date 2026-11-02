@@ -3,15 +3,29 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../data/mock_vocabulary_repository.dart';
+import '../../../../core/network/app_api.dart';
 import '../../domain/vocabulary_word.dart';
 
-class VocabularyPage extends StatelessWidget {
+class VocabularyPage extends StatefulWidget {
   const VocabularyPage({super.key});
 
   @override
+  State<VocabularyPage> createState() => _VocabularyPageState();
+}
+
+class _VocabularyPageState extends State<VocabularyPage> {
+  late Future<List<VocabularyWord>> _words = _loadWords();
+
+  Future<List<VocabularyWord>> _loadWords() async {
+    final response = await AppApi.instance.dio.get<List<dynamic>>('/scans/saved-words');
+    return (response.data ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(VocabularyWord.fromApi)
+        .toList(growable: false);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final words = MockVocabularyRepository.instance.getAll();
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -23,28 +37,35 @@ class VocabularyPage extends StatelessWidget {
         elevation: 1,
         actions: [
           IconButton(
-            onPressed: () => _showSearchHint(context),
+          onPressed: () => setState(() => _words = _loadWords()),
             icon: const Icon(LucideIcons.search),
             tooltip: 'Tìm kiếm từ',
           ),
         ],
       ),
-      body: words.isEmpty
-          ? const _EmptyVocabulary()
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: words.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) =>
-                  _VocabularyTile(word: words[index]),
-            ),
-    );
-  }
-
-  void _showSearchHint(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Tìm kiếm sẽ khả dụng khi kết nối API kho từ.'),
+      body: FutureBuilder<List<VocabularyWord>>(
+        future: _words,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('Không tải được kho từ. Hãy đăng nhập rồi thử lại.'),
+                TextButton(onPressed: () => setState(() => _words = _loadWords()), child: const Text('Thử lại')),
+              ]),
+            );
+          }
+          final words = snapshot.data ?? const <VocabularyWord>[];
+          if (words.isEmpty) return const _EmptyVocabulary();
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: words.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) => _VocabularyTile(word: words[index]),
+          );
+        },
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class ReviewPage extends StatefulWidget {
@@ -12,31 +13,40 @@ class ReviewPage extends StatefulWidget {
 }
 
 class _ReviewPageState extends State<ReviewPage> {
-  final List<Map<String, String>> _flashcards = [
-    {
-      'en': 'Delicious',
-      'ipa': '/dɪˈlɪʃ.əs/',
-      'vi': 'Ngon miệng, thơm ngon',
-      'example': 'This food is very delicious.',
-    },
-    {
-      'en': 'Station',
-      'ipa': '/ˈsteɪ.ʃən/',
-      'vi': 'Nhà ga, bến đỗ',
-      'example': 'Where is the nearest train station?',
-    },
-    {
-      'en': 'Appointment',
-      'ipa': '/əˈpɔɪnt.mənt/',
-      'vi': 'Cuộc hẹn, cuộc gặp',
-      'example': 'I have an appointment at 10 AM.',
-    },
-  ];
+  List<Map<String, String>> _flashcards = [];
+  bool _isLoading = true;
+  String? _loadError;
 
   int _currentIndex = 0;
   bool _isFlipped = false;
   bool _quizMode = false;
   int? _answer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFlashcards();
+  }
+
+  Future<void> _loadFlashcards() async {
+    setState(() { _isLoading = true; _loadError = null; });
+    try {
+      final response = await AppApi.instance.dio.get<List<dynamic>>('/scans/saved-words');
+      final cards = (response.data ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map((word) => <String, String>{
+            'en': word['label'] as String? ?? '',
+            'ipa': word['ipa'] as String? ?? '',
+            'vi': word['meaning_vi'] as String? ?? '',
+            'example': word['example_en'] as String? ?? '',
+          })
+          .where((card) => card['en']!.isNotEmpty)
+          .toList();
+      if (mounted) setState(() { _flashcards = cards; _isLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _loadError = 'Không tải được từ cần ôn. Hãy đăng nhập rồi thử lại.'; _isLoading = false; });
+    }
+  }
 
   void _nextCard() {
     setState(() {
@@ -48,7 +58,26 @@ class _ReviewPageState extends State<ReviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading || _flashcards.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: Text(_quizMode ? 'Quiz từ vựng' : 'Flashcard')),
+        body: Center(child: _isLoading
+            ? const CircularProgressIndicator()
+            : Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(_loadError ?? 'Kho từ đã lưu đang trống. Hãy quét và lưu từ mới trước.'),
+                TextButton(onPressed: _loadFlashcards, child: const Text('Thử lại')),
+              ])),
+      );
+    }
     final card = _flashcards[_currentIndex];
+    final quizOptions = <String>[
+      card['en']!,
+      ..._flashcards
+          .where((other) => other['en'] != card['en'])
+          .map((other) => other['en']!)
+          .take(3),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -108,12 +137,7 @@ class _ReviewPageState extends State<ReviewPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              for (final (index, option) in [
-                '${card['en']}',
-                'Hello',
-                'Book',
-                'Water',
-              ].indexed)
+              for (final (index, option) in quizOptions.indexed)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: OutlinedButton(

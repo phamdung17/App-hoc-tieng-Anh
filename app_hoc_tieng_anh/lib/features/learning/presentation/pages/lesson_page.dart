@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import 'dart:async';
@@ -10,7 +9,9 @@ import '../../data/mock_learning_repository.dart';
 import '../../domain/exercise_models.dart';
 import '../../domain/lesson_models.dart';
 import '../exercises/image_choice_exercise_widget.dart';
+import '../exercises/listening_exercise_widget.dart';
 import '../exercises/match_pairs_exercise_widget.dart';
+import '../exercises/speaking_exercise_widget.dart';
 import '../exercises/word_bank_exercise_widget.dart';
 import '../widgets/answer_feedback_sheet.dart';
 import '../widgets/exit_lesson_dialog.dart';
@@ -280,12 +281,14 @@ class _LessonPageState extends State<LessonPage> {
         },
       );
     } else if (exercise is ListeningExercise) {
-      return _ListeningExerciseWidget(
+      return ListeningExerciseWidget(
+        key: ValueKey(exercise.id),
         exercise: exercise,
-        onChanged: (value) => setState(() => _listeningAnswer = value),
+        onAnswerChanged: (value) => setState(() => _listeningAnswer = value),
       );
     } else if (exercise is SpeakingExercise) {
-      return _SpeakingExerciseWidget(
+      return SpeakingExerciseWidget(
+        key: ValueKey(exercise.id),
         exercise: exercise,
         onDone: () {
           setState(() => _speakingDone = true);
@@ -338,91 +341,4 @@ class _LessonPageState extends State<LessonPage> {
       ),
     );
   }
-}
-
-class _ListeningExerciseWidget extends StatefulWidget {
-  const _ListeningExerciseWidget({
-    required this.exercise,
-    required this.onChanged,
-  });
-  final ListeningExercise exercise;
-  final ValueChanged<String> onChanged;
-  @override
-  State<_ListeningExerciseWidget> createState() =>
-      _ListeningExerciseWidgetState();
-}
-
-class _ListeningExerciseWidgetState extends State<_ListeningExerciseWidget> {
-  final _controller = TextEditingController();
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 28),
-      Text(
-        widget.exercise.prompt,
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-      const SizedBox(height: 28),
-      Center(
-        child: IconButton.filled(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Phát âm thanh mẫu chưa được cấu hình.'),
-            ),
-          ),
-          icon: const Icon(LucideIcons.volume2),
-          iconSize: 32,
-          tooltip: 'Nghe câu mẫu',
-        ),
-      ),
-      const SizedBox(height: 24),
-      TextField(
-        controller: _controller,
-        onChanged: widget.onChanged,
-        decoration: const InputDecoration(
-          hintText: 'Nhập từ bạn nghe được',
-          border: OutlineInputBorder(),
-        ),
-      ),
-    ],
-  );
-}
-
-class _SpeakingExerciseWidget extends StatelessWidget {
-  const _SpeakingExerciseWidget({required this.exercise, required this.onDone});
-  final SpeakingExercise exercise;
-  final VoidCallback onDone;
-  @override
-  Widget build(BuildContext context) => Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Text(
-        exercise.prompt,
-        style: Theme.of(context).textTheme.headlineSmall,
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 28),
-      Text(
-        exercise.phrase,
-        style: Theme.of(context).textTheme.headlineMedium
-            ?.copyWith(fontWeight: FontWeight.w700),
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 24),
-      const Text('Đọc câu này thành tiếng, sau đó nhấn hoàn thành.'),
-      const SizedBox(height: 24),
-      FilledButton.icon(
-        onPressed: onDone,
-        icon: const Icon(LucideIcons.mic),
-        label: const Text('HOÀN THÀNH LƯỢT ĐỌC'),
-      ),
-    ],
-  );
 }

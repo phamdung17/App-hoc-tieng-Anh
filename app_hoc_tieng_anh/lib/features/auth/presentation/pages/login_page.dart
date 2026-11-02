@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/auth/google_auth_service.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -593,6 +594,23 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isSubmitting = true);
+    try {
+      await GoogleAuthService.instance.signIn();
+      if (!mounted) return;
+      context.go(AppRoutes.learning);
+    } on GoogleAuthException catch (e) {
+      if (!mounted) return;
+      _showMessage(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Đăng nhập Google thất bại. Vui lòng thử lại.');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   Widget _buildSocialButtons() {
     return Column(
       children: [
@@ -606,7 +624,7 @@ class _LoginPageState extends State<LoginPage> {
               fontWeight: FontWeight.w800,
             ),
           ),
-          onTap: () => _showMessage('Đăng nhập Google chưa được cấu hình.'),
+          onTap: _isSubmitting ? () {} : _signInWithGoogle,
         ),
         const SizedBox(height: 8),
         _SocialButton(

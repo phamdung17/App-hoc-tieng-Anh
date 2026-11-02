@@ -7,8 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router.dart';
 import '../../../../core/audio/app_sound_effects.dart';
 import '../../../../core/notifications/study_reminder_notifications.dart';
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../learning/data/mock_learning_repository.dart';
+import '../../../scan/data/scan_api_service.dart';
 import '../widgets/study_reminder_settings_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -20,12 +21,31 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   StudyReminderSchedule _reminderSchedule = const StudyReminderSchedule();
+  Map<String, dynamic>? _user;
+  ScanQuota? _scanQuota;
+  int _savedWords = 0;
 
   @override
   void initState() {
     super.initState();
     unawaited(AppSoundEffects.instance.initialize());
     unawaited(_loadReminderSchedule());
+    unawaited(_loadProfile());
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final response = await AppApi.instance.dio.get<Map<String, dynamic>>('/auth/me');
+      if (mounted) setState(() => _user = response.data);
+    } catch (_) {}
+    try {
+      final quota = await ScanApiService.instance.getQuota();
+      if (mounted) setState(() => _scanQuota = quota);
+    } catch (_) {}
+    try {
+      final words = await ScanApiService.instance.getSavedWords();
+      if (mounted) setState(() => _savedWords = words.length);
+    } catch (_) {}
   }
 
   Future<void> _loadReminderSchedule() async {
@@ -45,8 +65,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = MockLearningRepository.instance;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -91,12 +109,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                    Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Học viên LingoUp',
+                          _user?['display_name'] as String? ?? 'Hồ sơ học tập',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -105,7 +123,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'user@example.com',
+                          _user?['email'] as String? ?? 'Đăng nhập để xem hồ sơ',
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -126,7 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: _StatTile(
                     icon: LucideIcons.flame,
-                    title: '${repo.userStreak} Ngày',
+                    title: '${(_user?['streak_days'] as num?)?.toInt() ?? 0} Ngày',
                     subtitle: 'Chuỗi streak',
                   ),
                 ),
@@ -134,15 +152,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: _StatTile(
                     icon: LucideIcons.zap,
-                    title: '${repo.userXp} XP',
+                    title: '${(_user?['xp_total'] as num?)?.toInt() ?? 0} XP',
                     subtitle: 'Tổng kinh nghiệm',
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                  Expanded(
                   child: _StatTile(
                     icon: LucideIcons.bookOpen,
-                    title: '28 Từ',
+                      title: '$_savedWords Từ',
                     subtitle: 'Đã tích lũy',
                   ),
                 ),
@@ -200,9 +218,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: AppColors.primary,
                     ),
                     title: const Text('Hạn mức Gemini AI Scan'),
-                    subtitle: const Text('10 lượt quét / ngày'),
+                    subtitle: Text(_scanQuota == null
+                        ? 'Đăng nhập để xem hạn mức'
+                        : '${_scanQuota!.remaining}/${_scanQuota!.limit} lượt còn hôm nay'),
                     trailing: const Icon(LucideIcons.chevronRight),
-                    onTap: () {},
+                    onTap: _loadProfile,
                   ),
                 ],
               ),
@@ -212,8 +232,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // Logout Button
             OutlinedButton.icon(
-              onPressed: () {
-                context.go(AppRoutes.auth);
+              onPressed: () async {
+                await AppApi.instance.clearTokens();
+                if (context.mounted) context.go(AppRoutes.auth);
               },
               icon: const Icon(LucideIcons.logOut, color: AppColors.error),
               label: const Text('Đăng xuất / Chuyển tài khoản'),
