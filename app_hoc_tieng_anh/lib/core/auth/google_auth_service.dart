@@ -69,3 +69,4 @@ class GoogleAuthException implements Exception {
   @override
   String toString() => 'GoogleAuthException: $message';
 }
+

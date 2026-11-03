@@ -54,6 +54,11 @@ class ResendVerifyRequest(BaseModel):
     email: EmailStr
 
 
+class SocialGoogleRequest(BaseModel):
+    """POST /auth/social/google"""
+    id_token: str
+
+
 # ── Responses ─────────────────────────────────────────────────────────────────
 
 class TokenResponse(BaseModel):

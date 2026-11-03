@@ -6,19 +6,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../app/router.dart';
+import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/google_auth_service.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   static const _secureStorage = FlutterSecureStorage();
 
   final _formKey = GlobalKey<FormState>();
@@ -83,6 +86,8 @@ class _LoginPageState extends State<LoginPage> {
       if (_isLogin) {
         await _secureStorage.write(key: 'access_token', value: accessToken);
         await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+        if (!mounted) return;
+        await ref.read(authNotifierProvider.notifier).signIn();
         if (!mounted) return;
         context.go(AppRoutes.learning);
       } else {
@@ -599,6 +604,8 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await GoogleAuthService.instance.signIn();
       if (!mounted) return;
+      await ref.read(authNotifierProvider.notifier).signIn();
+      if (!mounted) return;
       context.go(AppRoutes.learning);
     } on GoogleAuthException catch (e) {
       if (!mounted) return;
@@ -641,7 +648,10 @@ class _LoginPageState extends State<LoginPage> {
           width: double.infinity,
           height: 48,
           child: TextButton.icon(
-            onPressed: () => context.go(AppRoutes.learning),
+            onPressed: () async {
+              await ref.read(authNotifierProvider.notifier).signInAsGuest();
+              if (mounted) context.go(AppRoutes.learning);
+            },
             icon: const Icon(LucideIcons.rocket, color: AppColors.primaryDark),
             label: const Text(
               'Trải nghiệm ngay (Chế độ Khách)',

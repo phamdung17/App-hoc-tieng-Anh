@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/auth/auth_notifier.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/audio/app_sound_effects.dart';
@@ -12,14 +14,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../scan/data/scan_api_service.dart';
 import '../widgets/study_reminder_settings_sheet.dart';
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends ConsumerState<ProfilePage> {
   StudyReminderSchedule _reminderSchedule = const StudyReminderSchedule();
   Map<String, dynamic>? _user;
   ScanQuota? _scanQuota;
@@ -234,6 +236,7 @@ class _ProfilePageState extends State<ProfilePage> {
             OutlinedButton.icon(
               onPressed: () async {
                 await AppApi.instance.clearTokens();
+                await ref.read(authNotifierProvider.notifier).signOut();
                 if (context.mounted) context.go(AppRoutes.auth);
               },
               icon: const Icon(LucideIcons.logOut, color: AppColors.error),

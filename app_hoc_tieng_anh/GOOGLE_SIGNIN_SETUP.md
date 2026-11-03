@@ -150,3 +150,4 @@ flutter run
 - **Apple Sign-In**: Xem cấu hình tương tự trong `APPLE_SIGNIN_SETUP.md` (sẽ bổ sung sau).
 - **Web Client ID**: Cần dùng Web Client ID (không phải Android/iOS Client ID) khi gửi lên backend.
 - File `google-services.json` và `GoogleService-Info.plist` **KHÔNG được commit lên Git** — thêm vào `.gitignore`.
+

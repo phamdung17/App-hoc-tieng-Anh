@@ -3,9 +3,11 @@
 // Định nghĩa tất cả routes dùng go_router.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/auth/auth_notifier.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/onboarding_survey_page.dart';
@@ -52,12 +54,50 @@ class AppRoutes {
   static const lessonResult = '/lesson-result';
 }
 
+// ── Auth-route helper ─────────────────────────────────────────────────────────
+
+bool _isPublicRoute(String location) =>
+    location.startsWith(AppRoutes.welcome) ||
+    location.startsWith(AppRoutes.auth) ||
+    location.startsWith(AppRoutes.register) ||
+    location.startsWith(AppRoutes.survey) ||
+    location.startsWith(AppRoutes.verifyEmail) ||
+    location.startsWith(AppRoutes.forgotPassword) ||
+    location.startsWith(AppRoutes.resetPassword);
+
 // ── Router ────────────────────────────────────────────────────────────────────
 
-GoRouter createRouter() {
+/// Tạo GoRouter với auth-redirect tích hợp.
+///
+/// [ref] dùng để đọc [authNotifierProvider] và tạo [RouterRefreshNotifier]
+/// — GoRouter sẽ tự động gọi lại redirect mỗi khi AuthState thay đổi.
+GoRouter createRouter(Ref ref) {
   return GoRouter(
     initialLocation: AppRoutes.welcome,
     debugLogDiagnostics: true,
+    // Khi AuthState thay đổi, GoRouter evaluate lại redirect.
+    refreshListenable: RouterRefreshNotifier(ref),
+    redirect: (BuildContext context, GoRouterState routerState) {
+      final authState = ref.read(authNotifierProvider);
+      final location = routerState.matchedLocation;
+
+      // Chưa kiểm tra xong → không redirect, giữ nguyên màn hình hiện tại.
+      if (authState == AuthState.unknown) return null;
+
+      final canAccess =
+          authState == AuthState.authenticated || authState == AuthState.guest;
+      final onPublicRoute = _isPublicRoute(location);
+
+      // Chưa đăng nhập / chưa vào chế độ khách mà đang ở route cần auth → về welcome.
+      if (!canAccess && !onPublicRoute) return AppRoutes.welcome;
+
+      // Đã đăng nhập tài khoản thật mà đang ở route login/welcome → vào thẳng học.
+      if (authState == AuthState.authenticated && onPublicRoute) {
+        return AppRoutes.learning;
+      }
+
+      return null; // Không cần redirect.
+    },
     routes: [
       // Welcome / Splash
       GoRoute(
@@ -197,6 +237,10 @@ GoRouter createRouter() {
     ],
   );
 }
+
+/// Provider toàn cục cho GoRouter — giữ nguyên router instance và navigation stack
+/// giữa các lần rebuild của app widget.
+final routerProvider = Provider<GoRouter>((ref) => createRouter(ref));
 
 // ── Main Shell (4 tabs + Camera FAB) ─────────────────────────────────────────
 

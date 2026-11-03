@@ -5,6 +5,7 @@ FastAPI router cho auth module.
 Endpoints:
   POST /auth/register       — Tạo tài khoản mới
   POST /auth/login          — Đăng nhập, nhận token pair
+  POST /auth/social/google  — Đăng nhập bằng Google OAuth ID token
   POST /auth/refresh        — Làm mới access token
   POST /auth/verify-email   — Xác minh email bằng token
   POST /auth/resend-verify  — Gửi lại email xác minh
@@ -35,6 +36,7 @@ from .schemas import (
     RefreshRequest,
     RegisterRequest,
     ResendVerifyRequest,
+    SocialGoogleRequest,
     TokenResponse,
     UserResponse,
     VerifyEmailRequest,
@@ -95,6 +97,26 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": exc.code, "message": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+
+@router.post(
+    "/social/google",
+    response_model=AuthResponse,
+    summary="Đăng nhập bằng Google OAuth ID token",
+)
+async def login_google(
+    body: SocialGoogleRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> AuthResponse:
+    """Xác minh Google idToken, trả access + refresh token của app."""
+    try:
+        return await service.login_with_google(body.id_token)
+    except InvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_GOOGLE_TOKEN", "message": "ID token từ Google không hợp lệ hoặc đã hết hạn."},
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 

@@ -23,6 +23,7 @@ class VocabularyWord {
   final String source;
   final String note;
 
+  /// Dùng để map kết quả từ ScanItem (field 'label' = từ nhận diện)
   factory VocabularyWord.fromApi(Map<String, dynamic> json) => VocabularyWord(
     id: json['id']?.toString() ?? '',
     word: json['label'] as String? ?? '',
@@ -34,6 +35,20 @@ class VocabularyWord {
     topic: json['topic'] as String? ?? '',
     source: 'AI Scan',
   );
+
+  /// Dùng để map kết quả từ GET /vocab (field 'lemma' = dạng gốc của từ)
+  factory VocabularyWord.fromWordApi(Map<String, dynamic> json) =>
+      VocabularyWord(
+        id: json['id']?.toString() ?? '',
+        word: json['lemma'] as String? ?? '',
+        ipa: json['ipa'] as String? ?? '',
+        meaningVi: json['meaning_vi'] as String? ?? '',
+        partOfSpeech: json['pos'] as String? ?? '',
+        exampleEn: json['example_en'] as String? ?? '',
+        exampleVi: json['example_vi'] as String? ?? '',
+        topic: json['topic'] as String? ?? '',
+        source: json['is_seeded'] == true ? 'Catalog' : 'AI Scan',
+      );
 
   VocabularyWord copyWith({String? note}) => VocabularyWord(
     id: id,

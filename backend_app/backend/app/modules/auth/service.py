@@ -4,6 +4,7 @@ app/modules/auth/service.py
 Business logic cho auth module:
   - register: tạo user mới, gửi email verify
   - login: xác thực credentials, trả token pair
+  - login_with_google: xác thực Google OAuth idToken
   - refresh: đổi refresh token lấy access token mới
   - verify_email: xác minh email bằng token
   - resend_verify: gửi lại email verify
@@ -66,16 +67,13 @@ class AuthService:
         Raises:
             EmailAlreadyRegisteredError: Email đã tồn tại.
         """
-        # Kiểm tra email đã tồn tại chưa
         existing = await self._get_user_by_email(email)
         if existing:
             raise EmailAlreadyRegisteredError()
 
-        # Tạo email verify token
         verify_token = secrets.token_urlsafe(32)
         verify_expires = datetime.now(timezone.utc) + timedelta(hours=_VERIFY_TOKEN_TTL_HOURS)
 
-        # Tạo user
         user = User(
             email=email.lower().strip(),
             hashed_password=hash_password(password),
@@ -87,20 +85,13 @@ class AuthService:
         self._db.add(user)
 
         try:
-            await self._db.flush()  # Lấy user.id, chưa commit
+            await self._db.flush()
         except IntegrityError:
-            # Race condition: email đã được tạo concurrently
             await self._db.rollback()
             raise EmailAlreadyRegisteredError()
 
         logger.info("New user registered: email=%s id=%s", email, user.id)
-
-        # TODO: Gửi email verify (Resend API)
-        # await send_verify_email(user.email, verify_token)
-        # Tạm log token để test mà không cần email service
         logger.debug("Email verify token for %s: %s", email, verify_token)
-
-        # Tạo token pair
         return self._build_auth_response(user)
 
     # ── Login ─────────────────────────────────────────────────────────────
@@ -114,19 +105,66 @@ class AuthService:
         """
         user = await self._get_user_by_email(email)
 
-        # Dùng constant-time compare để tránh timing attack
-        # Nếu user không tồn tại → vẫn verify một hash giả để đồng thời hóa thời gian
         if user is None:
-            verify_password("dummy", hash_password("dummy"))  # timing equalization
+            verify_password("dummy", hash_password("dummy"))
             raise InvalidCredentialsError()
 
         if not verify_password(password, user.hashed_password):
             raise InvalidCredentialsError()
 
         if not user.is_active:
-            raise InvalidCredentialsError()  # Treat inactive as invalid
+            raise InvalidCredentialsError()
 
         logger.info("User logged in: email=%s id=%s", email, user.id)
+        return self._build_auth_response(user)
+
+    # ── Google OAuth ──────────────────────────────────────────────────────
+
+    async def login_with_google(self, id_token: str) -> AuthResponse:
+        """
+        Xác thực Google ID Token và đăng nhập / tạo user mới.
+        """
+        import httpx
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
+                    "https://oauth2.googleapis.com/tokeninfo",
+                    params={"id_token": id_token},
+                )
+                if resp.status_code != 200:
+                    raise InvalidCredentialsError()
+                data = resp.json()
+        except httpx.HTTPError as exc:
+            logger.warning("Google tokeninfo request failed: %s", exc)
+            raise InvalidCredentialsError() from exc
+
+        email = data.get("email")
+        if not email:
+            raise InvalidCredentialsError()
+
+        user = await self._get_user_by_email(email)
+        if user is None:
+            display_name = data.get("name") or email.split("@")[0]
+            avatar_url = data.get("picture")
+            user = User(
+                email=email.lower().strip(),
+                hashed_password="",
+                display_name=display_name,
+                avatar_url=avatar_url,
+                email_verified=bool(data.get("email_verified", True)),
+                is_guest=False,
+            )
+            self._db.add(user)
+            await self._db.commit()
+            await self._db.refresh(user)
+            logger.info("Created new user via Google Sign-In: id=%s email=%s", user.id, email)
+        else:
+            if not user.email_verified and data.get("email_verified"):
+                user.email_verified = True
+                await self._db.commit()
+            logger.info("Logged in existing user via Google Sign-In: id=%s", user.id)
+
         return self._build_auth_response(user)
 
     # ── Refresh token ─────────────────────────────────────────────────────
@@ -176,7 +214,6 @@ class AuthService:
         if user.email_verify_expires_at and user.email_verify_expires_at < now:
             raise InvalidVerifyTokenError()
 
-        # Xác minh thành công
         user.email_verified = True
         user.email_verify_token = None
         user.email_verify_expires_at = None
@@ -197,12 +234,10 @@ class AuthService:
         if user.email_verified:
             raise EmailAlreadyVerifiedError()
 
-        # Tạo token mới
         user.email_verify_token = secrets.token_urlsafe(32)
         user.email_verify_expires_at = datetime.now(timezone.utc) + timedelta(
             hours=_VERIFY_TOKEN_TTL_HOURS
         )
-        # TODO: Gửi email verify (Resend API)
         logger.debug(
             "Resend verify token for %s: %s", email, user.email_verify_token
         )
