@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../data/learning_repository.dart';
 import '../../data/mock_learning_repository.dart';
 import '../../domain/lesson_models.dart';
 import '../widgets/unit_lesson_node.dart';
@@ -15,7 +16,35 @@ class LearningPathPage extends StatefulWidget {
 }
 
 class _LearningPathPageState extends State<LearningPathPage> {
-  final _repository = MockLearningRepository.instance;
+  final _repository = LearningRepository.instance;
+  List<LearningUnit> _units = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnits();
+  }
+
+  Future<void> _loadUnits() async {
+    setState(() => _isLoading = true);
+    try {
+      final units = await _repository.getUnits();
+      if (mounted) {
+        setState(() {
+          _units = units;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _units = MockLearningRepository.instance.getUnits();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _openLessonPreview(LessonNode lesson) {
     if (lesson.status == LessonStatus.locked) {
@@ -132,9 +161,12 @@ class _LearningPathPageState extends State<LearningPathPage> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop();
-                  context.push('/lesson/${lesson.id}');
+                  await context.push('/lesson/${lesson.id}');
+                  if (mounted) {
+                    _loadUnits();
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -163,7 +195,9 @@ class _LearningPathPageState extends State<LearningPathPage> {
 
   @override
   Widget build(BuildContext context) {
-    final units = _repository.getUnits();
+    final units = _units.isNotEmpty
+        ? _units
+        : MockLearningRepository.instance.getUnits();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -258,11 +292,11 @@ class _LearningPathPageState extends State<LearningPathPage> {
           ],
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          setState(() {});
-        },
-        child: SingleChildScrollView(
+      body: _isLoading && _units.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadUnits,
+              child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),

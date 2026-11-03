@@ -16,6 +16,16 @@ class AppApi {
       ),
     );
 
+    // ── 0. URL Normalization interceptor: đảm bảo tiền tố /api/v1 ──────────
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          options.path = normalizePath(options.path);
+          handler.next(options);
+        },
+      ),
+    );
+
     // ── 1. Auth interceptor: đính kèm access_token vào mỗi request ──────────
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -47,7 +57,7 @@ class AppApi {
               // Gọi refresh bằng Dio riêng để không kích hoạt lại interceptor này
               final refreshDio = Dio(BaseOptions(baseUrl: dio.options.baseUrl));
               final refreshResp = await refreshDio.post(
-                '/auth/refresh',
+                normalizePath('/auth/refresh'),
                 data: {'refresh_token': refreshToken},
               );
 
@@ -78,6 +88,39 @@ class AppApi {
   static const refreshTokenKey = 'refresh_token';
 
   late final Dio dio;
+
+  /// Chuẩn hóa đường dẫn endpoint:
+  /// - Giữ nguyên URL tuyệt đối (http:// hoặc https://)
+  /// - Giữ nguyên các endpoint đặc biệt ở root nếu có (ví dụ '/health')
+  /// - Đảm bảo tiền tố /api/v1 luôn xuất hiện đúng 1 lần duy nhất, không trùng lặp
+  static String normalizePath(String path) {
+    final trimmed = path.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
+
+    if (cleanPath == '/health') {
+      return cleanPath;
+    }
+
+    if (cleanPath.startsWith('/api/v1/') || cleanPath == '/api/v1') {
+      return cleanPath;
+    }
+
+    return '/api/v1$cleanPath';
+  }
+
+  /// Trả về URL đầy đủ đã phân giải chính xác theo RFC 3986
+  static String resolveUrl(String path, {String? customBaseUrl}) {
+    final base = AppConfig.cleanBaseUrl(customBaseUrl ?? AppConfig.baseUrl);
+    final normPath = normalizePath(path);
+    if (normPath.startsWith('http://') || normPath.startsWith('https://')) {
+      return normPath;
+    }
+    return '$base$normPath';
+  }
 
   Future<void> saveTokens(Map<String, dynamic> tokens) async {
     final access = tokens['access_token'] as String?;

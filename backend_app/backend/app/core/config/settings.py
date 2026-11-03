@@ -9,6 +9,8 @@ Fail fast khi thiếu biến bắt buộc (Pydantic sẽ raise ValueError lúc i
 from __future__ import annotations
 
 from functools import lru_cache
+import json
+from typing import Any
 
 from pydantic import AnyHttpUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,15 +30,25 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: list[str] | str = ["http://localhost:3000"]
     LOG_LEVEL: str = "INFO"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Chấp nhận chuỗi phân tách bằng dấu phẩy hoặc list."""
+    def parse_cors_origins(cls, v: Any) -> list[str]:
+        """Chấp nhận chuỗi phân tách bằng dấu phẩy, mảng JSON hoặc list."""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            v_str = v.strip()
+            if v_str.startswith("[") and v_str.endswith("]"):
+                try:
+                    parsed = json.loads(v_str)
+                    if isinstance(parsed, list):
+                        return [str(origin).strip() for origin in parsed if str(origin).strip()]
+                except Exception:
+                    pass
+            return [origin.strip() for origin in v_str.split(",") if origin.strip()]
+        if isinstance(v, (list, tuple, set)):
+            return [str(origin).strip() for origin in v if str(origin).strip()]
         return v
 
     # ── PostgreSQL ───────────────────────────────────────────────────────

@@ -34,6 +34,7 @@ from app.core.models.learning import (
     UserLessonProgress,
 )
 from app.core.models.user import User
+from app.modules.progress.service import ProgressService
 
 from .schemas import (
     LearningPathResponse,
@@ -185,6 +186,9 @@ class LearningService:
         if not path:
             return None
 
+        # Init progress cho bài đầu tiên nếu chưa có
+        await self._ensure_first_lesson_available(path.id, user_id)
+
         # Lấy tất cả units (sắp xếp theo order_index)
         units_result = await self.db.execute(
             select(Unit)
@@ -286,7 +290,7 @@ class LearningService:
         lesson_id: uuid.UUID,
         user_id: uuid.UUID,
         score: int,
-        time_spent_seconds: int,  # noqa: ARG002 — reserved for future analytics
+        time_spent_seconds: int,
     ) -> SubmitLessonResponse:
         """
         Nộp kết quả bài học.
@@ -295,7 +299,7 @@ class LearningService:
           1. Lấy lesson và progress record hiện tại.
           2. Nếu score >= 70 → mark completed.
           3. Tính xp_earned: bằng lesson.xp_reward nếu lần đầu complete, else 0.
-          4. Cộng xp vào users.xp_total.
+          4. Ghi nhận hoạt động vào ProgressService (cập nhật UserDailyActivity, streak, xp_total).
           5. Update/create user_lesson_progress (best_score, attempt_count).
           6. Unlock lesson tiếp theo (trong unit hoặc unit tiếp theo).
           7. Return SubmitLessonResponse.
@@ -321,17 +325,19 @@ class LearningService:
         # 2 & 3. Tính xp và status mới
         passed = score >= 70
         was_completed = prog.status == "completed" if prog else False
-        xp_earned = lesson.xp_reward if (passed and not was_completed) else 0
+        is_first_completion = passed and not was_completed
+        xp_earned = lesson.xp_reward if is_first_completion else 0
         new_status = "completed" if passed else (prog.status if prog else "available")
         now = datetime.now(timezone.utc)
 
-        # 4. Cộng XP vào user
-        if xp_earned > 0:
-            await self.db.execute(
-                update(User)
-                .where(User.id == user_id)
-                .values(xp_total=User.xp_total + xp_earned)
-            )
+        # 4. Ghi nhận hoạt động vào user_daily_activities, cập nhật streak_days & xp_total
+        progress_service = ProgressService(self.db)
+        await progress_service.record_activity(
+            user_id=user_id,
+            xp_earned=xp_earned,
+            lessons_completed=1 if is_first_completion else 0,
+            minutes_studied=max(1, time_spent_seconds // 60),
+        )
 
         # 5. Update / create progress record
         if prog is None:
@@ -355,7 +361,7 @@ class LearningService:
 
         # 6. Unlock bài tiếp theo
         unlocked_lessons: list[str] = []
-        if passed and not was_completed:
+        if is_first_completion:
             unlocked = await self._unlock_next_lesson(lesson, user_id)
             unlocked_lessons = unlocked
 

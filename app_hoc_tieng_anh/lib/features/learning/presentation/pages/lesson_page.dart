@@ -5,6 +5,7 @@ import 'dart:async';
 
 import '../../../../core/audio/app_sound_effects.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../data/learning_repository.dart';
 import '../../data/mock_learning_repository.dart';
 import '../../domain/exercise_models.dart';
 import '../../domain/lesson_models.dart';
@@ -28,8 +29,9 @@ class LessonPage extends StatefulWidget {
 
 class _LessonPageState extends State<LessonPage> {
   late LessonDetail _lessonDetail;
-  late List<Exercise> _exerciseQueue;
+  List<Exercise> _exerciseQueue = [];
   int _totalOriginalCount = 0;
+  bool _isLoading = true;
 
   int _currentIndex = 0;
   int _correctCount = 0;
@@ -51,11 +53,35 @@ class _LessonPageState extends State<LessonPage> {
   @override
   void initState() {
     super.initState();
-    _lessonDetail = MockLearningRepository.instance.getLessonDetail(
-      widget.lessonId,
-    );
-    _exerciseQueue = List.from(_lessonDetail.exercises);
-    _totalOriginalCount = _exerciseQueue.length;
+    _loadLesson();
+  }
+
+  Future<void> _loadLesson() async {
+    try {
+      final detail = await LearningRepository.instance.getLessonDetail(
+        widget.lessonId,
+      );
+      if (mounted) {
+        setState(() {
+          _lessonDetail = detail;
+          _exerciseQueue = List.from(detail.exercises);
+          _totalOriginalCount = _exerciseQueue.length;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        final detail = MockLearningRepository.instance.getLessonDetail(
+          widget.lessonId,
+        );
+        setState(() {
+          _lessonDetail = detail;
+          _exerciseQueue = List.from(detail.exercises);
+          _totalOriginalCount = _exerciseQueue.length;
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _resetCurrentAnswerState() {
@@ -161,30 +187,43 @@ class _LessonPageState extends State<LessonPage> {
     }
   }
 
-  void _finishLesson() {
+  Future<void> _finishLesson() async {
     unawaited(AppSoundEffects.instance.play(AppSoundEffect.lessonComplete));
     final durationSeconds = DateTime.now().difference(_startTime).inSeconds;
     final accuracy = _attemptsCount > 0
         ? ((_correctCount / _attemptsCount) * 100).round()
         : 100;
 
-    MockLearningRepository.instance.completeLesson(
-      widget.lessonId,
-      _lessonDetail.xpReward,
+    final score = accuracy.clamp(0, 100);
+
+    final submitResult = await LearningRepository.instance.submitLesson(
+      lessonId: widget.lessonId,
+      score: score,
+      timeSpentSeconds: durationSeconds,
+      xpReward: _lessonDetail.xpReward,
     );
+
+    final xpEarned = submitResult['xp_earned'] is num
+        ? (submitResult['xp_earned'] as num).toInt()
+        : _lessonDetail.xpReward;
+    final streakDays = submitResult['streak_days'] is num
+        ? (submitResult['streak_days'] as num).toInt()
+        : LearningRepository.instance.userStreak;
 
     final result = LessonResult(
       lessonId: widget.lessonId,
       lessonTitle: _lessonDetail.title,
-      xpEarned: _lessonDetail.xpReward,
+      xpEarned: xpEarned,
       accuracyPercentage: accuracy.clamp(0, 100),
       totalQuestions: _totalOriginalCount,
       correctCount: _correctCount,
       durationSeconds: durationSeconds,
-      streakDays: MockLearningRepository.instance.userStreak,
+      streakDays: streakDays,
     );
 
-    context.go('/lesson-result', extra: result);
+    if (mounted) {
+      context.go('/lesson-result', extra: result);
+    }
   }
 
   Future<void> _handleExit() async {
@@ -198,7 +237,7 @@ class _LessonPageState extends State<LessonPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_exerciseQueue.isEmpty) {
+    if (_isLoading || _exerciseQueue.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 

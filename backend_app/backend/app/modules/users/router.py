@@ -75,6 +75,7 @@ async def update_my_profile(
 @router.post(
     "/me/fcm-token",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Đăng ký FCM device token để nhận thông báo học tập",
 )
 async def register_fcm_token(
@@ -89,6 +90,7 @@ async def register_fcm_token(
 @router.delete(
     "/me/fcm-token",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Xóa FCM token khi đăng xuất",
 )
 async def remove_fcm_token(
@@ -102,6 +104,7 @@ async def remove_fcm_token(
 @router.delete(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Yêu cầu xóa tài khoản",
 )
 async def delete_my_account(

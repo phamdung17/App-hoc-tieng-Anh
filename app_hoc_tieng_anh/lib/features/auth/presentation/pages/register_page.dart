@@ -24,15 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _termsController = ValueNotifier<bool>(false);
-  final _dio = Dio(
-    BaseOptions(
-      baseUrl: AppConfig.baseUrl,
-      connectTimeout: AppConfig.connectTimeout,
-      receiveTimeout: AppConfig.receiveTimeout,
-      sendTimeout: AppConfig.sendTimeout,
-      headers: const {'Content-Type': 'application/json'},
-    ),
-  );
+  final _dio = AppApi.instance.dio;
 
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
@@ -45,7 +37,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _termsController.dispose();
-    _dio.close();
     super.dispose();
   }
 

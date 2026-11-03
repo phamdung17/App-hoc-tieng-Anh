@@ -16,13 +16,33 @@ class AppConfig {
     defaultValue: 'development',
   );
 
-  // Must point to the FastAPI API root. Override for a physical device or
-  // deployment with --dart-define=API_BASE_URL=https://example.com/api/v1.
+  // Must point to the FastAPI host root. Override for a physical device or
+  // deployment with --dart-define=API_BASE_URL=https://example.com.
   // Android emulator: 10.0.2.2 points to the host machine's localhost.
-  static const String baseUrl = String.fromEnvironment(
+  static const String _rawBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api/v1',
+    defaultValue: 'http://10.0.2.2:8000',
   );
+
+  /// Base URL gốc của server (luôn đảm bảo không có trailing slash hay /api/v1 thừa)
+  static String get baseUrl => cleanBaseUrl(_rawBaseUrl);
+
+  static const String apiV1Prefix = '/api/v1';
+
+  /// Làm sạch URL loại bỏ trailing slash và hậu tố /api/v1 nếu có
+  static String cleanBaseUrl(String url) {
+    var cleaned = url.trim();
+    while (cleaned.endsWith('/')) {
+      cleaned = cleaned.substring(0, cleaned.length - 1);
+    }
+    if (cleaned.endsWith('/api/v1')) {
+      cleaned = cleaned.substring(0, cleaned.length - '/api/v1'.length);
+    }
+    while (cleaned.endsWith('/')) {
+      cleaned = cleaned.substring(0, cleaned.length - 1);
+    }
+    return cleaned;
+  }
 
   // Dio timeouts
   static const Duration connectTimeout = Duration(seconds: 15);

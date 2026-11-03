@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>LingoUp cần quyền truy cập camera để chụp ảnh và quét đồ vật học từ vựng bằng AI.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LingoUp cần quyền sử dụng micro để bạn thực hiện các bài tập luyện phát âm.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LingoUp cần quyền truy cập thư viện ảnh để bạn chọn hình ảnh quét từ vựng.</string>
 </dict>
 </plist>

@@ -12,6 +12,7 @@ import '../../../../app/router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/google_auth_service.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -28,15 +29,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _dio = Dio(
-    BaseOptions(
-      baseUrl: AppConfig.baseUrl,
-      connectTimeout: AppConfig.connectTimeout,
-      receiveTimeout: AppConfig.receiveTimeout,
-      sendTimeout: AppConfig.sendTimeout,
-      headers: const {'Content-Type': 'application/json'},
-    ),
-  );
+  final _dio = AppApi.instance.dio;
 
   bool _isLogin = true;
   bool _obscurePassword = true;
@@ -47,7 +40,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _dio.close();
     super.dispose();
   }
 

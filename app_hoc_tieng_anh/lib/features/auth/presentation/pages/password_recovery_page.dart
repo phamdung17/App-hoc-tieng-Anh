@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class PasswordRecoveryPage extends StatefulWidget {
@@ -21,19 +22,12 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
   bool _busy = false;
   bool _sent = false;
   bool get _resetMode => widget.token?.isNotEmpty == true;
-  late final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: AppConfig.baseUrl,
-      connectTimeout: AppConfig.connectTimeout,
-      receiveTimeout: AppConfig.receiveTimeout,
-    ),
-  );
+  final _dio = AppApi.instance.dio;
   @override
   void dispose() {
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
-    _dio.close();
     super.dispose();
   }
 

@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class EmailVerificationPage extends StatefulWidget {
@@ -20,7 +21,7 @@ class EmailVerificationPage extends StatefulWidget {
 class _EmailVerificationPageState extends State<EmailVerificationPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _emailController;
-  late final Dio _dio;
+  final _dio = AppApi.instance.dio;
 
   bool _isBusy = false;
   bool _isVerified = false;
@@ -31,15 +32,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: widget.email ?? '');
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: AppConfig.baseUrl,
-        connectTimeout: AppConfig.connectTimeout,
-        receiveTimeout: AppConfig.receiveTimeout,
-        sendTimeout: AppConfig.sendTimeout,
-        headers: const {'Content-Type': 'application/json'},
-      ),
-    );
     final token = widget.token?.trim();
     if (token != null && token.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _verifyToken(token));
@@ -49,7 +41,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   @override
   void dispose() {
     _emailController.dispose();
-    _dio.close();
     super.dispose();
   }
 
