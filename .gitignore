@@ -32,6 +32,7 @@ venv/
 # IDE / OS / logs / local data
 .idea/
 .vscode/
+.agents/
 .DS_Store
 Thumbs.db
 *.log
