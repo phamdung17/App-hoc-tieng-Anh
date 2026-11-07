@@ -148,6 +148,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     icon: LucideIcons.flame,
                     title: '${(_user?['streak_days'] as num?)?.toInt() ?? 0} Ngày',
                     subtitle: 'Chuỗi streak',
+                    onTap: () => context.push(AppRoutes.progress),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -156,14 +157,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     icon: LucideIcons.zap,
                     title: '${(_user?['xp_total'] as num?)?.toInt() ?? 0} XP',
                     subtitle: 'Tổng kinh nghiệm',
+                    onTap: () => context.push(AppRoutes.progress),
                   ),
                 ),
                 const SizedBox(width: 12),
-                  Expanded(
+                Expanded(
                   child: _StatTile(
                     icon: LucideIcons.bookOpen,
-                      title: '$_savedWords Từ',
+                    title: '$_savedWords Từ',
                     subtitle: 'Đã tích lũy',
+                    onTap: () => context.go(AppRoutes.vocabulary),
                   ),
                 ),
               ],
@@ -182,6 +185,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               child: Column(
                 children: [
+                  ListTile(
+                    leading: const Icon(
+                      LucideIcons.calendarDays,
+                      color: AppColors.primary,
+                    ),
+                    title: const Text('Biểu đồ tiến độ & Lịch học'),
+                    subtitle: const Text('Xem chuỗi streak và lịch sử 30 ngày'),
+                    trailing: const Icon(LucideIcons.chevronRight),
+                    onTap: () => context.push(AppRoutes.progress),
+                  ),
+                  const Divider(height: 1, indent: 56),
                   ListTile(
                     leading: const Icon(
                       LucideIcons.bellRing,
@@ -265,44 +279,50 @@ class _StatTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   const _StatTile({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: AppColors.outline.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: AppColors.primaryDark),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          border: Border.all(color: AppColors.outline.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 24, color: AppColors.primaryDark),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -20,6 +20,7 @@ import '../features/learning/presentation/pages/learning_path_page.dart';
 import '../features/learning/presentation/pages/lesson_page.dart';
 import '../features/learning/presentation/pages/lesson_result_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
+import '../features/progress/presentation/pages/progress_page.dart';
 import '../features/review/presentation/pages/practice_hub_page.dart';
 import '../features/review/presentation/pages/review_page.dart';
 import '../features/scan/domain/scan_models.dart';
@@ -52,6 +53,7 @@ class AppRoutes {
   static const wordDetail = '/word/:id';
   static const lessonDetail = '/lesson/:id';
   static const lessonResult = '/lesson-result';
+  static const progress = '/progress';
 }
 
 // ── Auth-route helper ─────────────────────────────────────────────────────────
@@ -206,6 +208,13 @@ GoRouter createRouter(Ref ref) {
           }
           return LessonResultPage(result: result);
         },
+      ),
+
+      // Progress & Streak Calendar
+      GoRoute(
+        path: AppRoutes.progress,
+        name: 'progress',
+        builder: (context, state) => const ProgressPage(),
       ),
 
       // Home shell với 4 tabs

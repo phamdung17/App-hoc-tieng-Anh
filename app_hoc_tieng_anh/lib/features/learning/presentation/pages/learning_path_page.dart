@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/learning_repository.dart';
 import '../../data/mock_learning_repository.dart';
@@ -208,62 +209,68 @@ class _LearningPathPageState extends State<LearningPathPage> {
         title: Row(
           children: [
             // Streak Flame
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.warning.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    LucideIcons.flame,
-                    size: 16,
-                    color: AppColors.coral,
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.progress),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${_repository.userStreak} ngày',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.flame,
+                      size: 16,
                       color: AppColors.coral,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      '${_repository.userStreak} ngày',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.coral,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 10),
             // XP Counter
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.warning.withValues(alpha: 0.5),
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.progress),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.5),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    LucideIcons.zap,
-                    size: 18,
-                    color: AppColors.warning,
-                  ),
-                  const SizedBox(width: 2),
-                  Text(
-                    '${_repository.userXp} XP',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
+                child: Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.zap,
+                      size: 18,
+                      color: AppColors.warning,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 2),
+                    Text(
+                      '${_repository.userXp} XP',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const Spacer(),
