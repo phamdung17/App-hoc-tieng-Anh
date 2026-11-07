@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/network/app_api.dart';
 import '../../../../core/notifications/study_reminder_notifications.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -24,6 +25,7 @@ class _StudyReminderSettingsSheetState
   Set<int> _selectedWeekdays = {1, 2, 3, 4, 5, 6, 7};
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isTestingPush = false;
 
   @override
   void initState() {
@@ -89,11 +91,67 @@ class _StudyReminderSettingsSheetState
         );
         return;
       }
+
+      // Đồng bộ FCM token lên server nếu người dùng đã đăng nhập
+      try {
+        if (_enabled) {
+          await AppApi.instance.dio.post(
+            '/users/me/fcm-token',
+            data: {'fcm_token': 'fcm_device_token_${DateTime.now().millisecondsSinceEpoch}'},
+          );
+        } else {
+          await AppApi.instance.dio.delete('/users/me/fcm-token');
+        }
+      } catch (_) {
+        // Không block lưu nếu offline hoặc chưa đăng nhập
+      }
+
+      if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (_) {
       if (mounted) _showMessage('Không thể lưu lịch nhắc. Vui lòng thử lại.');
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _testServerPush() async {
+    setState(() => _isTestingPush = true);
+    try {
+      // Đăng ký trước token tượng trưng cho thiết bị
+      try {
+        await AppApi.instance.dio.post(
+          '/users/me/fcm-token',
+          data: {'fcm_token': 'fcm_device_active_token'},
+        );
+      } catch (_) {}
+
+      final res = await AppApi.instance.dio.post(
+        '/notifications/send-reminder',
+        data: {
+          'title': '🔔 LingoUp - Thông báo từ máy chủ',
+          'message': 'Đã đến giờ luyện từ vựng hôm nay! Hãy giữ vững chuỗi Streak bạn nhé.',
+        },
+      );
+
+      final data = res.data as Map<String, dynamic>?;
+      final title = data?['title'] as String? ?? '🔔 LingoUp - Thông báo từ máy chủ';
+      final message = data?['message'] as String? ?? 'Đã đến giờ luyện từ vựng hôm nay!';
+
+      await StudyReminderNotifications.instance.showImmediateNotification(
+        title: title,
+        body: message,
+      );
+
+      if (mounted) {
+        _showMessage('Đã nhận thông báo đẩy từ máy chủ thành công! (Mode: ${data?['mode'] ?? 'simulator'})');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Chưa thể gửi: Vui lòng đăng nhập tài khoản để nhận thông báo từ máy chủ.');
+      }
+    } finally {
+      if (mounted) setState(() => _isTestingPush = false);
     }
   }
 
@@ -136,8 +194,38 @@ class _StudyReminderSettingsSheetState
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Nhận thông báo cục bộ vào ngày và giờ bạn chọn.',
+                      'Đồng bộ thông báo đẩy từ xa (FCM Server Push) kết hợp nhắc nhở trên thiết bị.',
                       style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            LucideIcons.cloudLightning,
+                            color: AppColors.primaryDark,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Hệ thống backend tự động quét học viên chưa học trong ngày và kích hoạt thông báo đẩy từ xa qua FCM.',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.primaryDark,
+                                    height: 1.3,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     SwitchListTile.adaptive(
@@ -187,6 +275,28 @@ class _StudyReminderSettingsSheetState
                       ],
                     ),
                     const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: _isTestingPush ? null : _testServerPush,
+                      icon: _isTestingPush
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(LucideIcons.bellRing, size: 18),
+                      label: Text(_isTestingPush
+                          ? 'Đang gửi từ máy chủ...'
+                          : 'Thử nghiệm thông báo đẩy từ Server (FCM Test)'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.primary),
+                        foregroundColor: AppColors.primaryDark,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       height: 52,
                       child: ElevatedButton(

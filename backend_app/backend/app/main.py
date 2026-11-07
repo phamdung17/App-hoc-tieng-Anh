@@ -78,6 +78,7 @@ def create_app() -> FastAPI:
     from app.modules.users.router import router as users_router
     from app.modules.vocab.router import router as vocab_router
     from app.modules.learning.router import router as learning_router
+    from app.modules.notifications.router import router as notifications_router
 
     app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
     app.include_router(scan_router, prefix=settings.API_V1_PREFIX)
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
     app.include_router(vocab_router, prefix=settings.API_V1_PREFIX)
     app.include_router(progress_router, prefix=settings.API_V1_PREFIX)
     app.include_router(learning_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(notifications_router, prefix=settings.API_V1_PREFIX)
 
     # ── Health check ──────────────────────────────────────────────────────
     @app.get("/health", tags=["system"], summary="Health check")

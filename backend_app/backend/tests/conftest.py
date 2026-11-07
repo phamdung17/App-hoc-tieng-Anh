@@ -70,8 +70,8 @@ if sys.platform == "win32":
         def _safe_poll(self, timeout=None):
             try:
                 return orig_poll(self, timeout)
-            except OSError as e:
-                if getattr(e, "winerror", None) == 0:
+            except (OSError, TimeoutError) as e:
+                if getattr(e, "winerror", None) in (0, 258):
                     return
                 raise
 

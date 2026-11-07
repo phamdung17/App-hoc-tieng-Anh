@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/audio/app_sound_effects.dart';
+import '../../../../core/audio/app_tts_service.dart';
 import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -48,12 +50,27 @@ class _ReviewPageState extends State<ReviewPage> {
     }
   }
 
-  void _nextCard() {
+  void _nextCard({bool remembered = true}) {
+    if (remembered) {
+      AppSoundEffects.instance.play(AppSoundEffect.correct);
+    } else {
+      AppSoundEffects.instance.play(AppSoundEffect.click);
+    }
     setState(() {
       _isFlipped = false;
       _answer = null;
       _currentIndex = (_currentIndex + 1) % _flashcards.length;
     });
+  }
+
+  void _selectQuizAnswer(int index, bool isCorrect, String correctWord) {
+    setState(() => _answer = index);
+    if (isCorrect) {
+      AppSoundEffects.instance.play(AppSoundEffect.correct);
+      AppTtsService.instance.speak(correctWord);
+    } else {
+      AppSoundEffects.instance.play(AppSoundEffect.incorrect);
+    }
   }
 
   @override
@@ -141,10 +158,10 @@ class _ReviewPageState extends State<ReviewPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: OutlinedButton(
-                    onPressed: () => setState(() => _answer = index),
+                    onPressed: () => _selectQuizAnswer(index, index == 0, card['en']!),
                     style: OutlinedButton.styleFrom(
                       backgroundColor: _answer == index
-                          ? AppColors.primaryLight
+                          ? (_answer == 0 ? AppColors.primaryLight : const Color(0xFFFFECEB))
                           : Colors.white,
                       minimumSize: const Size.fromHeight(52),
                     ),
@@ -231,7 +248,19 @@ class _ReviewPageState extends State<ReviewPage> {
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        if (!_isFlipped) ...[
+                          const SizedBox(height: 14),
+                          IconButton.filledTonal(
+                            tooltip: 'Phát âm tiếng Anh',
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.primaryLight,
+                              foregroundColor: AppColors.primaryDark,
+                            ),
+                            onPressed: () => AppTtsService.instance.speak(card['en']!),
+                            icon: const Icon(LucideIcons.volume2, size: 24),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

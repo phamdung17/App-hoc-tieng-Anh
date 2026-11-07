@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../vocabulary/data/mock_vocabulary_repository.dart';
+import '../../../scan/data/scan_api_service.dart';
 
 /// Giao diện 16 – Trung tâm ôn tập
 /// Dashboard gồm: Từ đến hạn SRS, luyện nghe/nói nhanh, flashcard, hộp lỗi sai.
@@ -16,12 +16,36 @@ class PracticeHubPage extends StatefulWidget {
 }
 
 class _PracticeHubPageState extends State<PracticeHubPage> {
-  // Dữ liệu demo từ mock repository
-  int get _savedWordsCount =>
-      MockVocabularyRepository.instance.getAll().length;
+  int _savedWordsCount = 0;
+  int _dueTodayCount = 0;
+  bool _isLoading = true;
 
-  // Giả lập số từ đến hạn ôn hôm nay
-  static const int _dueTodayCount = 7;
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final words = await ScanApiService.instance.getSavedWords();
+      if (mounted) {
+        setState(() {
+          _savedWordsCount = words.length;
+          _dueTodayCount = words.isNotEmpty ? (words.length > 5 ? 5 : words.length) : 0;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _savedWordsCount = 0;
+          _dueTodayCount = 0;
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   // Giả lập câu sai gần đây (từ các bài học)
   static const List<Map<String, String>> _wrongAnswers = [

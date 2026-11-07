@@ -144,6 +144,33 @@ class StudyReminderNotifications {
     return true;
   }
 
+  Future<void> showImmediateNotification({
+    required String title,
+    required String body,
+    int id = 7399,
+  }) async {
+    await initialize();
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'study_reminder_channel',
+          'Nhắc nhở học tập',
+          channelDescription: 'Thông báo đẩy từ máy chủ FCM hoặc lịch học.',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+  }
+
   Future<bool> _requestPermission() async {
     final android = _plugin
         .resolvePlatformSpecificImplementation<
