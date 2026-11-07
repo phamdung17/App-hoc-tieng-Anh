@@ -41,7 +41,7 @@ class User(TimestampMixin, Base):
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # ── Verification ──────────────────────────────────────────────────────
-    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     email_verify_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     email_verify_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

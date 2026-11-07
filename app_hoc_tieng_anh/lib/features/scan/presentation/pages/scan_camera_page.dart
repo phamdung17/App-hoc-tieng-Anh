@@ -48,7 +48,7 @@ class _ScanCameraPageState extends State<ScanCameraPage>
       if (!mounted) return;
       if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng nhập và xác minh email để dùng AI Scan.')),
+          const SnackBar(content: Text('Đăng nhập để dùng AI Scan.')),
         );
       }
     }
@@ -83,8 +83,6 @@ class _ScanCameraPageState extends State<ScanCameraPage>
       final code = detail is Map<String, dynamic> ? detail['code'] : null;
       final message = status == 401 || code == 'AUTH_REQUIRED_FOR_AI'
           ? 'Đăng nhập để sử dụng AI Scan.'
-          : code == 'EMAIL_NOT_VERIFIED'
-          ? 'Hãy xác minh email trước khi sử dụng AI Scan.'
           : status == 429
           ? 'Bạn đã dùng hết lượt quét hôm nay.'
           : 'Không thể phân tích ảnh. Kiểm tra kết nối rồi thử lại.';

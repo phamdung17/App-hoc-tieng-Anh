@@ -28,7 +28,9 @@ from app.core.security.jwt import (
     TokenInvalidError,
     create_access_token,
     create_refresh_token,
+    create_reset_token,
     decode_refresh_token,
+    decode_reset_token,
 )
 from app.core.security.password import hash_password, verify_password
 
@@ -36,6 +38,7 @@ from .errors import (
     EmailAlreadyRegisteredError,
     EmailAlreadyVerifiedError,
     InvalidCredentialsError,
+    InvalidResetTokenError,
     InvalidVerifyTokenError,
     UserNotFoundError,
 )
@@ -78,9 +81,9 @@ class AuthService:
             email=email.lower().strip(),
             hashed_password=hash_password(password),
             display_name=display_name.strip() or email.split("@")[0],
-            email_verified=False,
-            email_verify_token=verify_token,
-            email_verify_expires_at=verify_expires,
+            email_verified=True,
+            email_verify_token=None,
+            email_verify_expires_at=None,
         )
         self._db.add(user)
 
@@ -241,6 +244,45 @@ class AuthService:
         logger.debug(
             "Resend verify token for %s: %s", email, user.email_verify_token
         )
+
+    # ── Password reset ────────────────────────────────────────────────────
+
+    async def forgot_password(self, email: str) -> str | None:
+        """
+        Khởi tạo yêu cầu đặt lại mật khẩu.
+
+        Nếu email tồn tại, sinh reset token (hiệu lực 1 giờ).
+        Trả về token để phục vụ gửi mail hoặc logging.
+        """
+        user = await self._get_user_by_email(email)
+        if user is None:
+            logger.info("Forgot password requested for non-existent email: %s", email)
+            return None
+
+        reset_token = create_reset_token(user.id)
+        logger.info("Password reset token generated for user_id=%s email=%s", user.id, email)
+        logger.debug("Password reset token: %s", reset_token)
+        return reset_token
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        """
+        Đặt lại mật khẩu bằng reset token.
+
+        Raises:
+            InvalidResetTokenError: Token không hợp lệ hoặc đã hết hạn.
+            UserNotFoundError: Không tìm thấy người dùng.
+        """
+        try:
+            user_id = decode_reset_token(token)
+        except (TokenExpiredError, TokenInvalidError) as exc:
+            raise InvalidResetTokenError() from exc
+
+        user = await self._get_user_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError()
+
+        user.hashed_password = hash_password(new_password)
+        logger.info("Password reset successfully for user_id=%s", user.id)
 
     # ── Private helpers ───────────────────────────────────────────────────
 

@@ -32,6 +32,11 @@ class InvalidVerifyTokenError(AuthDomainError):
         super().__init__("INVALID_VERIFY_TOKEN", "Verification token is invalid or expired")
 
 
+class InvalidResetTokenError(AuthDomainError):
+    def __init__(self) -> None:
+        super().__init__("INVALID_RESET_TOKEN", "Password reset token is invalid or expired")
+
+
 class EmailAlreadyVerifiedError(AuthDomainError):
     def __init__(self) -> None:
         super().__init__("EMAIL_ALREADY_VERIFIED", "Email is already verified")

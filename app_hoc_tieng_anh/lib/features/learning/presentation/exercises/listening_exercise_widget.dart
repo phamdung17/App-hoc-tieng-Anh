@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/audio/app_tts_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/exercise_models.dart';
 
@@ -35,20 +36,20 @@ class _ListeningExerciseWidgetState extends State<ListeningExerciseWidget>
     super.dispose();
   }
 
-  /// Giả lập phát âm chuẩn (sẽ gọi TTS/audioplayers sau khi tích hợp API)
+  /// Phát âm chuẩn qua TTS
   Future<void> _playNormal() async {
     if (_isPlaying || _isPlayingSlow) return;
     setState(() => _isPlaying = true);
-    // TODO: gọi TTS với widget.exercise.audioText
+    await AppTtsService.instance.speak(widget.exercise.audioText, slow: false);
     await Future<void>.delayed(const Duration(milliseconds: 1400));
     if (mounted) setState(() => _isPlaying = false);
   }
 
-  /// Giả lập phát âm chậm 0.6x
+  /// Phát âm chậm 0.7x qua TTS
   Future<void> _playSlow() async {
     if (_isPlaying || _isPlayingSlow) return;
     setState(() => _isPlayingSlow = true);
-    // TODO: gọi TTS tốc độ chậm với widget.exercise.audioText
+    await AppTtsService.instance.speak(widget.exercise.audioText, slow: true);
     await Future<void>.delayed(const Duration(milliseconds: 2200));
     if (mounted) setState(() => _isPlayingSlow = false);
   }

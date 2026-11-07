@@ -43,9 +43,18 @@ def create_refresh_token(user_id: uuid.UUID) -> str:
     )
 
 
+def create_reset_token(user_id: uuid.UUID) -> str:
+    """Tạo JWT password reset token cho user (hiệu lực 1 giờ)."""
+    return _create_token(
+        user_id=user_id,
+        token_type="reset",
+        expires_delta=timedelta(hours=1),
+    )
+
+
 def _create_token(
     user_id: uuid.UUID,
-    token_type: Literal["access", "refresh"],
+    token_type: Literal["access", "refresh", "reset"],
     expires_delta: timedelta,
 ) -> str:
     now = datetime.now(timezone.utc)
@@ -101,8 +110,22 @@ def decode_refresh_token(token: str) -> uuid.UUID:
     return _decode_token(token, expected_type="refresh")
 
 
+def decode_reset_token(token: str) -> uuid.UUID:
+    """
+    Verify và decode password reset token.
+
+    Returns:
+        UUID của user.
+
+    Raises:
+        TokenExpiredError: Token hết hạn.
+        TokenInvalidError: Token không hợp lệ.
+    """
+    return _decode_token(token, expected_type="reset")
+
+
 def _decode_token(
-    token: str, expected_type: Literal["access", "refresh"]
+    token: str, expected_type: Literal["access", "refresh", "reset"]
 ) -> uuid.UUID:
     try:
         payload = jwt.decode(

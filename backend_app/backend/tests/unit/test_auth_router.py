@@ -208,3 +208,51 @@ async def test_get_current_user_me(auth_test_client):
     assert data["display_name"] == "Me Myself"
     assert data["streak_days"] == 10
     assert data["xp_total"] == 500
+
+
+@pytest.mark.asyncio
+async def test_forgot_password_endpoint(auth_test_client):
+    client, mock_service = auth_test_client
+    mock_service.forgot_password.return_value = "mock-reset-token"
+
+    resp = await client.post(
+        "/api/v1/auth/forgot-password",
+        json={"email": "forgot@lingoup.com"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "password reset instructions" in data["message"].lower()
+    mock_service.forgot_password.assert_awaited_once_with("forgot@lingoup.com")
+
+
+@pytest.mark.asyncio
+async def test_reset_password_success(auth_test_client):
+    client, mock_service = auth_test_client
+    mock_service.reset_password.return_value = None
+
+    resp = await client.post(
+        "/api/v1/auth/reset-password",
+        json={"token": "valid-token", "password": "NewPassword123!"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "successfully" in data["message"].lower()
+    mock_service.reset_password.assert_awaited_once_with(
+        token="valid-token", new_password="NewPassword123!"
+    )
+
+
+@pytest.mark.asyncio
+async def test_reset_password_invalid_token(auth_test_client):
+    from app.modules.auth.errors import InvalidResetTokenError
+
+    client, mock_service = auth_test_client
+    mock_service.reset_password.side_effect = InvalidResetTokenError()
+
+    resp = await client.post(
+        "/api/v1/auth/reset-password",
+        json={"token": "expired-token", "password": "NewPassword123!"},
+    )
+    assert resp.status_code == 400
+    data = resp.json()
+    assert data["detail"]["code"] == "INVALID_RESET_TOKEN"

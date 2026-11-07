@@ -26,16 +26,19 @@ from .errors import (
     EmailAlreadyRegisteredError,
     EmailAlreadyVerifiedError,
     InvalidCredentialsError,
+    InvalidResetTokenError,
     InvalidVerifyTokenError,
     UserNotFoundError,
 )
 from .schemas import (
     AuthResponse,
+    ForgotPasswordRequest,
     LoginRequest,
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
     ResendVerifyRequest,
+    ResetPasswordRequest,
     SocialGoogleRequest,
     TokenResponse,
     UserResponse,
@@ -182,6 +185,47 @@ async def resend_verify(
     except (UserNotFoundError, EmailAlreadyVerifiedError) as exc:
         # Không tiết lộ user có tồn tại không — trả message thống nhất
         return MessageResponse(message="If the email exists, a verification email has been sent")
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    summary="Yêu cầu đặt lại mật khẩu",
+)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> MessageResponse:
+    """Gửi link/token đặt lại mật khẩu qua email."""
+    await service.forgot_password(body.email)
+    return MessageResponse(
+        message="If the email exists, password reset instructions have been sent"
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="Đặt lại mật khẩu bằng reset token",
+)
+async def reset_password(
+    body: ResetPasswordRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> MessageResponse:
+    """Đặt lại mật khẩu mới bằng token hợp lệ."""
+    try:
+        await service.reset_password(token=body.token, new_password=body.password)
+        return MessageResponse(message="Password reset successfully")
+    except InvalidResetTokenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
+    except UserNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
 
 
 @router.get(

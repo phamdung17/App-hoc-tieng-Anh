@@ -75,16 +75,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       if (!mounted) return;
 
-      if (_isLogin) {
-        await _secureStorage.write(key: 'access_token', value: accessToken);
-        await _secureStorage.write(key: 'refresh_token', value: refreshToken);
-        if (!mounted) return;
-        await ref.read(authNotifierProvider.notifier).signIn();
-        if (!mounted) return;
-        context.go(AppRoutes.learning);
-      } else {
-        context.go(AppRoutes.verifyEmail, extra: _emailController.text.trim());
-      }
+      await _secureStorage.write(key: 'access_token', value: accessToken);
+      await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+      if (!mounted) return;
+      await ref.read(authNotifierProvider.notifier).signIn();
+      if (!mounted) return;
+      context.go(AppRoutes.learning);
     } on DioException catch (error) {
       if (!mounted) return;
       _showMessage(_messageForDioError(error));

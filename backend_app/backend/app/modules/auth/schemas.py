@@ -59,6 +59,29 @@ class SocialGoogleRequest(BaseModel):
     id_token: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    """POST /auth/forgot-password"""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """POST /auth/reset-password"""
+    token: str
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        """Yêu cầu ít nhất 1 chữ hoa, 1 chữ thường, 1 số."""
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password phải có ít nhất 1 chữ hoa")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password phải có ít nhất 1 chữ thường")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password phải có ít nhất 1 chữ số")
+        return v
+
+
 # ── Responses ─────────────────────────────────────────────────────────────────
 
 class TokenResponse(BaseModel):

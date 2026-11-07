@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/audio/app_tts_service.dart';
 import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../scan/data/scan_api_service.dart';
+import '../../data/vocabulary_api_service.dart';
 import '../../domain/vocabulary_word.dart';
 
 class VocabularyDetailPage extends StatefulWidget {
@@ -29,6 +31,14 @@ class _VocabularyDetailPageState extends State<VocabularyDetailPage> {
   }
 
   Future<void> _loadWord() async {
+    try {
+      final catalogWord = await VocabularyApiService.instance.getById(widget.wordId);
+      if (mounted && catalogWord.word.isNotEmpty) {
+        setState(() => _word = catalogWord);
+        return;
+      }
+    } catch (_) {}
+
     try {
       final response = await AppApi.instance.dio.get<List<dynamic>>('/scans/saved-words');
       final words = (response.data ?? const [])
@@ -354,15 +364,7 @@ class _VocabularyDetailPageState extends State<VocabularyDetailPage> {
   }
 
   void _showPronunciationNotice(VocabularyWord word) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Dịch vụ phát âm chưa được kết nối cho “${word.word}”.',
-          ),
-        ),
-      );
+    AppTtsService.instance.speak(word.word);
   }
 }
 

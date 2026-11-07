@@ -76,30 +76,9 @@ async def require_ai_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """
-    Dependency: get_current_user + kiểm tra email đã xác minh.
-    Dùng cho tất cả AI endpoints (scan, v.v.).
-
-    Raises:
-        403 FORBIDDEN: Guest user hoặc email chưa xác minh.
+    Dependency: get_current_user cho tất cả AI endpoints (scan, v.v.).
+    Không yêu cầu xác minh email.
     """
-    if current_user.is_guest:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "AUTH_REQUIRED_FOR_AI",
-                "message": "Please register to use AI features",
-            },
-        )
-
-    if not current_user.email_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "EMAIL_NOT_VERIFIED",
-                "message": "Please verify your email to use AI features",
-            },
-        )
-
     return current_user
 
 

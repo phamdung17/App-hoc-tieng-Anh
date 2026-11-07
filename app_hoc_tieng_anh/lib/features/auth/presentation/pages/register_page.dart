@@ -3,21 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/network/app_api.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -61,7 +63,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       if (!mounted) return;
-      context.go(AppRoutes.verifyEmail, extra: _emailController.text.trim());
+      await ref.read(authNotifierProvider.notifier).signIn();
+      if (!mounted) return;
+      context.go(AppRoutes.learning);
     } on DioException catch (error) {
       if (!mounted) return;
       _showMessage(_messageForDioError(error));
