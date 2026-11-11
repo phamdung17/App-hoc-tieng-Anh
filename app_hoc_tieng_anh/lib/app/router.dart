@@ -11,7 +11,6 @@ import '../core/auth/auth_notifier.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/onboarding_survey_page.dart';
-import '../features/auth/presentation/pages/email_verification_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/pages/welcome_page.dart';
 import '../features/auth/presentation/pages/password_recovery_page.dart';
@@ -39,7 +38,6 @@ class AppRoutes {
   static const survey = '/survey';
   static const auth = '/auth';
   static const register = '/register';
-  static const verifyEmail = '/verify-email';
   static const forgotPassword = '/forgot-password';
   static const resetPassword = '/reset-password';
   static const flashcards = '/flashcards';
@@ -63,7 +61,6 @@ bool _isPublicRoute(String location) =>
     location.startsWith(AppRoutes.auth) ||
     location.startsWith(AppRoutes.register) ||
     location.startsWith(AppRoutes.survey) ||
-    location.startsWith(AppRoutes.verifyEmail) ||
     location.startsWith(AppRoutes.forgotPassword) ||
     location.startsWith(AppRoutes.resetPassword);
 
@@ -141,18 +138,6 @@ GoRouter createRouter(Ref ref) {
         path: AppRoutes.flashcards,
         name: 'flashcards',
         builder: (context, state) => const ReviewPage(),
-      ),
-
-      // Email verification
-      GoRoute(
-        path: AppRoutes.verifyEmail,
-        name: 'verifyEmail',
-        builder: (context, state) => EmailVerificationPage(
-          email: state.extra is String
-              ? state.extra! as String
-              : state.uri.queryParameters['email'],
-          token: state.uri.queryParameters['token'],
-        ),
       ),
 
       // AI Scan (full-screen, không thuộc shell)

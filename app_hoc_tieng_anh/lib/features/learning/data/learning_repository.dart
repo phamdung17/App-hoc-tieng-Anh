@@ -1,29 +1,30 @@
 // lib/features/learning/data/learning_repository.dart
 //
-// Repository điều phối dữ liệu học tập (Facade / Offline-First Fallback):
-// - Ưu tiên gọi backend FastAPI qua LearningApiService khi có mạng và dữ liệu hợp lệ.
-// - Tự động chuyển đổi mượt mà sang MockLearningRepository khi offline, backend lỗi
-//   (DioException, 404, 500, timeout), hoặc backend chưa có seed data.
-// - Đảm bảo zero crash và tính liên tục cho trải nghiệm người dùng.
+// Repository lấy và nộp dữ liệu học tập qua backend FastAPI.
 
 import 'dart:developer' as developer;
 
+import '../../../../core/network/app_api.dart';
 import '../domain/exercise_models.dart';
 import '../domain/lesson_models.dart';
 import 'learning_api_service.dart';
 import 'mock_learning_repository.dart';
 
 class LearningRepository {
-  LearningRepository._({
-    LearningApiService? apiService,
-    MockLearningRepository? mockRepository,
-  })  : _apiService = apiService ?? LearningApiService.instance,
-        _mockRepository = mockRepository ?? MockLearningRepository.instance;
+  LearningRepository._({LearningApiService? apiService})
+      : _apiService = apiService ?? LearningApiService.instance;
 
   static final LearningRepository instance = LearningRepository._();
 
   final LearningApiService _apiService;
-  final MockLearningRepository _mockRepository;
+
+  Future<bool> _isGuestMode() async {
+    try {
+      return await AppApi.storage.read(key: 'is_guest') == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
 
   static final RegExp _uuidRegex = RegExp(
     r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
@@ -32,41 +33,26 @@ class LearningRepository {
   /// Kiểm tra chuỗi có đúng định dạng UUID hay không
   static bool isUuid(String id) => _uuidRegex.hasMatch(id.trim());
 
-  int get userStreak => _mockRepository.userStreak;
-  set userStreak(int value) => _mockRepository.userStreak = value;
-
-  int get userXp => _mockRepository.userXp;
-  set userXp(int value) => _mockRepository.userXp = value;
-
-  int get dailyGoalXp => _mockRepository.dailyGoalXp;
-  int get todayXpEarned => _mockRepository.todayXpEarned;
-
   /// Lấy danh sách Unit cùng các bài học kèm trạng thái tiến độ
   Future<List<LearningUnit>> getUnits() async {
+    if (await _isGuestMode()) {
+      return MockLearningRepository.instance.getUnits();
+    }
+
     try {
       final paths = await _apiService.getPaths();
-      if (paths.isEmpty) {
-        developer.log(
-          'LearningRepository: Backend returned empty paths, using mock fallback',
-          name: 'LearningRepository',
-        );
-        return _mockRepository.getUnits();
-      }
+      if (paths.isEmpty) throw StateError('Chưa có lộ trình học trên máy chủ.');
 
       final activePath = paths.first;
       final pathId = activePath['id']?.toString();
       if (pathId == null || pathId.isEmpty) {
-        return _mockRepository.getUnits();
+        throw const FormatException('Lộ trình học thiếu mã định danh.');
       }
 
       final detail = await _apiService.getPathDetail(pathId);
       final rawUnits = detail['units'];
       if (rawUnits is! List || rawUnits.isEmpty) {
-        developer.log(
-          'LearningRepository: Path detail has no units, using mock fallback',
-          name: 'LearningRepository',
-        );
-        return _mockRepository.getUnits();
+        throw StateError('Lộ trình này chưa có nội dung bài học.');
       }
 
       final List<LearningUnit> units = [];
@@ -133,124 +119,66 @@ class LearningRepository {
       if (units.isNotEmpty) {
         return units;
       }
-    } catch (e, stack) {
-      developer.log(
-        'LearningRepository: Failed to load units from backend: $e. Using mock fallback.',
-        name: 'LearningRepository',
-        error: e,
-        stackTrace: stack,
-      );
+    } on StateError {
+      rethrow;
+    } catch (e) {
+      throw Exception('Không tải được lộ trình học: $e');
     }
-
-    return _mockRepository.getUnits();
+    throw StateError('Lộ trình học không có bài học hợp lệ.');
   }
 
   /// Lấy chi tiết bài học kèm danh sách bài tập tương tác
   Future<LessonDetail> getLessonDetail(String lessonId) async {
-    // Nếu ID là mock identifier (không phải UUID) -> nạp mock trực tiếp
+    if (await _isGuestMode()) {
+      return MockLearningRepository.instance.getLessonDetail(lessonId);
+    }
+
     if (!isUuid(lessonId)) {
-      developer.log(
-        'LearningRepository: Non-UUID lesson id "$lessonId" detected, loading mock directly',
-        name: 'LearningRepository',
-      );
-      return _mockRepository.getLessonDetail(lessonId);
+      throw const FormatException('Mã bài học từ máy chủ không hợp lệ.');
     }
 
-    try {
-      final data = await _apiService.getLessonDetail(lessonId);
-      if (data.isNotEmpty) {
-        final exercises = parseExercises(lessonId, data['content_data']);
-        if (exercises.isNotEmpty) {
-          final xpReward = data['xp_reward'] is num
-              ? (data['xp_reward'] as num).toInt()
-              : 20;
-
-          return LessonDetail(
-            id: lessonId,
-            title: data['title']?.toString() ?? 'Bài học',
-            unitTitle: 'Lộ trình LingoUp',
-            xpReward: xpReward,
-            exercises: exercises,
-          );
-        }
-      }
-    } catch (e, stack) {
-      developer.log(
-        'LearningRepository: Failed to fetch lesson detail for $lessonId: $e',
-        name: 'LearningRepository',
-        error: e,
-        stackTrace: stack,
-      );
-    }
-
-    // Graceful fallback nếu backend gặp lỗi hoặc exercises rỗng
-    return _mockRepository.getLessonDetail(lessonId);
+    final data = await _apiService.getLessonDetail(lessonId);
+    if (data.isEmpty) throw StateError('Không tìm thấy bài học này.');
+    final exercises = parseExercises(lessonId, data['content_data']);
+    if (exercises.isEmpty) throw StateError('Bài học này chưa có bài tập.');
+    return LessonDetail(
+      id: lessonId,
+      title: data['title']?.toString() ?? 'Bài học',
+      unitTitle: 'Lộ trình LingoUp',
+      xpReward: data['xp_reward'] is num
+          ? (data['xp_reward'] as num).toInt()
+          : 20,
+      exercises: exercises,
+    );
   }
 
-  /// Nộp bài học: Gửi lên Backend để cập nhật streak & activity, fallback an toàn khi offline
+  /// Nộp kết quả lên backend; lỗi mạng được báo cho giao diện để người học thử lại.
   Future<Map<String, dynamic>> submitLesson({
     required String lessonId,
     required int score,
     required int timeSpentSeconds,
-    required int xpReward,
   }) async {
-    if (!isUuid(lessonId)) {
-      _mockRepository.completeLesson(lessonId, xpReward);
-      return {
-        'score': score,
-        'xp_earned': xpReward,
-        'streak_days': _mockRepository.userStreak,
-        'lesson_status': 'completed',
-        'is_offline': true,
-      };
-    }
-
-    try {
-      final response = await _apiService.submitLesson(
-        lessonId: lessonId,
-        score: score,
-        timeSpentSeconds: timeSpentSeconds,
-      );
-
-      final xpEarned = response['xp_earned'] is num
-          ? (response['xp_earned'] as num).toInt()
-          : xpReward;
-      final streakDays = response['streak_days'] is num
-          ? (response['streak_days'] as num).toInt()
-          : _mockRepository.userStreak;
-      final newTotalXp = response['new_total_xp'] is num
-          ? (response['new_total_xp'] as num).toInt()
-          : null;
-
-      if (newTotalXp != null) {
-        _mockRepository.userXp = newTotalXp;
+    if (await _isGuestMode()) {
+      final mock = MockLearningRepository.instance;
+      final detail = mock.getLessonDetail(lessonId);
+      if (score >= 70) {
+        mock.completeLesson(lessonId, detail.xpReward);
+        return {
+          'xp_earned': detail.xpReward,
+          'streak_days': mock.userStreak,
+        };
       }
-      _mockRepository.userStreak = streakDays;
-      _mockRepository.completeLesson(lessonId, xpEarned);
-
-      return {
-        ...response,
-        'xp_earned': xpEarned,
-        'streak_days': streakDays,
-        'is_offline': false,
-      };
-    } catch (e, stack) {
-      developer.log(
-        'LearningRepository: Failed to submit lesson $lessonId to backend: $e. Recording locally.',
-        name: 'LearningRepository',
-        error: e,
-        stackTrace: stack,
-      );
-
-      _mockRepository.completeLesson(lessonId, xpReward);
-      return {
-        'score': score,
-        'xp_earned': xpReward,
-        'streak_days': _mockRepository.userStreak,
-        'lesson_status': 'completed',
-        'is_offline': true,
-      };
+      return {'xp_earned': 0, 'streak_days': mock.userStreak};
     }
+
+    if (!isUuid(lessonId)) {
+      throw const FormatException('Mã bài học từ máy chủ không hợp lệ.');
+    }
+    return _apiService.submitLesson(
+      lessonId: lessonId,
+      score: score,
+      timeSpentSeconds: timeSpentSeconds,
+    );
   }
 
   /// Phân giải danh sách bài tập từ JSONB content_data đa dạng

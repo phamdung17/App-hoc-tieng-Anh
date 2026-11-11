@@ -108,6 +108,7 @@ async def create_scan(
     current_user: User = Depends(require_ai_user),
     service: ScanService = Depends(get_scan_service),
     redis=Depends(get_redis),
+    db: AsyncSession = Depends(get_db),
 ) -> ScanResponse:
     """
     Upload ảnh → Gemini nhận diện vật thể → trả danh sách kết quả.
@@ -119,44 +120,52 @@ async def create_scan(
     # Đọc bytes từ upload
     image_bytes = await image.read()
     content_type = image.content_type or "image/jpeg"
+    # Save the scalar before any rollback: rollback expires ORM instances, and
+    # reading current_user.id afterwards can trigger async IO outside greenlet.
+    user_id = current_user.id
 
     # Reserve quota trước (raises 429 nếu hết quota)
-    await reserve_scan_quota(current_user.id, redis)
+    quota_key = await reserve_scan_quota(user_id, redis)
 
     try:
         result = await service.create_scan(
-            user_id=current_user.id,
+            user_id=user_id,
             image_bytes=image_bytes,
             content_type=content_type,
         )
+        await db.commit()
         # Nếu status=no_object → hoàn trả quota
         if result.status == "no_object":
-            await release_scan_quota(current_user.id, redis)
+            await release_scan_quota(user_id, redis, quota_key)
         return result
 
     except InvalidImageError as exc:
-        await release_scan_quota(current_user.id, redis)
+        await db.rollback()
+        await release_scan_quota(user_id, redis, quota_key)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": exc.code, "message": exc.message},
         ) from exc
 
     except ImageRejectedError as exc:
-        await release_scan_quota(current_user.id, redis)
+        await db.rollback()
+        await release_scan_quota(user_id, redis, quota_key)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": exc.code, "message": "Image rejected by safety filter"},
         ) from exc
 
     except ScanFailedError as exc:
-        await release_scan_quota(current_user.id, redis)
+        await db.rollback()
+        await release_scan_quota(user_id, redis, quota_key)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": exc.code, "message": "Scan failed — please try again"},
         ) from exc
 
     except AITemporarilyUnavailableError as exc:
-        await release_scan_quota(current_user.id, redis)
+        await db.rollback()
+        await release_scan_quota(user_id, redis, quota_key)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": exc.code, "message": "AI service temporarily unavailable"},
@@ -164,5 +173,6 @@ async def create_scan(
 
     except Exception:
         # Unexpected error → hoàn trả quota
-        await release_scan_quota(current_user.id, redis)
+        await db.rollback()
+        await release_scan_quota(user_id, redis, quota_key)
         raise

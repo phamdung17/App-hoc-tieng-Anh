@@ -8,6 +8,7 @@
 //   * Phân trang và tra cứu chi tiết
 
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -61,16 +62,13 @@ class _VocabularyPageState extends State<VocabularyPage>
   // ── Tab 1 Logic ────────────────────────────────────────────────────────────
 
   Future<List<VocabularyWord>> _loadSavedWords() async {
-    try {
-      final response =
-          await AppApi.instance.dio.get<List<dynamic>>('/scans/saved-words');
-      return (response.data ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(VocabularyWord.fromApi)
-          .toList(growable: false);
-    } catch (_) {
-      return const [];
-    }
+    final response = await AppApi.instance.dio.get<List<dynamic>>(
+      '/scans/saved-words',
+    );
+    return (response.data ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(VocabularyWord.fromApi)
+        .toList(growable: false);
   }
 
   // ── Tab 2 Logic ────────────────────────────────────────────────────────────
@@ -144,10 +142,14 @@ class _VocabularyPageState extends State<VocabularyPage>
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          labelStyle:
-              const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          unselectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
           tabs: const [
             Tab(
               icon: Icon(LucideIcons.bookmark, size: 18),
@@ -162,10 +164,7 @@ class _VocabularyPageState extends State<VocabularyPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildSavedWordsTab(),
-          _buildCatalogTab(),
-        ],
+        children: [_buildSavedWordsTab(), _buildCatalogTab()],
       ),
     );
   }
@@ -182,6 +181,37 @@ class _VocabularyPageState extends State<VocabularyPage>
           );
         }
 
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    LucideIcons.cloudOff,
+                    size: 44,
+                    color: AppColors.textHint,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Không tải được từ đã lưu. Kiểm tra kết nối rồi thử lại.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        setState(() => _savedWordsFuture = _loadSavedWords()),
+                    icon: const Icon(LucideIcons.refreshCw, size: 16),
+                    label: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final words = snapshot.data ?? const <VocabularyWord>[];
         if (words.isEmpty) {
           return const _EmptySavedVocabulary();
@@ -189,9 +219,11 @@ class _VocabularyPageState extends State<VocabularyPage>
 
         return RefreshIndicator(
           onRefresh: () async {
+            final future = _loadSavedWords();
             setState(() {
-              _savedWordsFuture = _loadSavedWords();
+              _savedWordsFuture = future;
             });
+            await future;
           },
           color: AppColors.primary,
           child: ListView.separated(
@@ -264,14 +296,16 @@ class _VocabularyPageState extends State<VocabularyPage>
                   onTap: () => _onTopicSelected(''),
                 ),
                 const SizedBox(width: 8),
-                ..._topics.map((t) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: _TopicFilterChip(
-                        label: _formatTopicName(t),
-                        isSelected: _selectedTopic == t,
-                        onTap: () => _onTopicSelected(t),
-                      ),
-                    )),
+                ..._topics.map(
+                  (t) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _TopicFilterChip(
+                      label: _formatTopicName(t),
+                      isSelected: _selectedTopic == t,
+                      onTap: () => _onTopicSelected(t),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -293,9 +327,7 @@ class _VocabularyPageState extends State<VocabularyPage>
         ),
 
         // Catalog list
-        Expanded(
-          child: _buildCatalogList(),
-        ),
+        Expanded(child: _buildCatalogList()),
       ],
     );
   }
@@ -314,8 +346,11 @@ class _VocabularyPageState extends State<VocabularyPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.alertCircle,
-                  size: 40, color: AppColors.warning),
+              const Icon(
+                LucideIcons.alertCircle,
+                size: 40,
+                color: AppColors.warning,
+              ),
               const SizedBox(height: 12),
               Text(
                 _catalogError!,

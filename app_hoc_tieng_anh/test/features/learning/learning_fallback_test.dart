@@ -13,7 +13,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app_hoc_tieng_anh/core/network/app_api.dart';
 import 'package:app_hoc_tieng_anh/features/learning/data/learning_repository.dart';
-import 'package:app_hoc_tieng_anh/features/learning/data/mock_learning_repository.dart';
 
 class ThrowingHttpClientAdapter implements HttpClientAdapter {
   final DioException Function(RequestOptions options) errorGenerator;
@@ -127,7 +126,6 @@ void main() {
         lessonId: validUuid,
         score: 80,
         timeSpentSeconds: 90,
-        xpReward: 25,
       );
 
       expect(result['lesson_status'], equals('completed'));

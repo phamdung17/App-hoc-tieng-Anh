@@ -49,7 +49,7 @@ async def test_register_success(auth_test_client):
             id=user_id,
             email="learner@lingoup.com",
             display_name="Learner",
-            email_verified=False,
+            email_verified=True,
             is_guest=False,
             xp_total=0,
             streak_days=0,

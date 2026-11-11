@@ -3,7 +3,7 @@ app/core/deps/auth.py
 
 FastAPI dependencies cho authentication:
   - get_current_user  : xác thực JWT, trả User object
-  - require_ai_user   : get_current_user + kiểm tra email verified
+  - require_ai_user   : kiểm tra người dùng đã đăng nhập
 
 Dùng OAuth2 Bearer token từ header Authorization.
 """

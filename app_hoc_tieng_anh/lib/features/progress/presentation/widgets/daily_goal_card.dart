@@ -18,9 +18,12 @@ class DailyGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final targetXp = summary.dailyGoalXp > 0 ? summary.dailyGoalXp : 10;
-    final progress = (summary.todayXp / targetXp).clamp(0.0, 1.0);
-    final isReached = summary.dailyGoalReached || summary.todayXp >= targetXp;
+    final targetXp = summary.dailyGoalXp;
+    final progress = targetXp > 0
+        ? (summary.todayXp / targetXp).clamp(0.0, 1.0)
+        : 0.0;
+    final isReached = targetXp > 0 &&
+        (summary.dailyGoalReached || summary.todayXp >= targetXp);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -70,9 +73,11 @@ class DailyGoalCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isReached
-                          ? 'Đã hoàn thành xuất sắc! 🎉'
-                          : 'Cần thêm ${targetXp - summary.todayXp} XP để đạt mục tiêu',
+                      targetXp <= 0
+                          ? 'Chưa thiết lập mục tiêu ngày'
+                          : isReached
+                              ? 'Đã hoàn thành xuất sắc! 🎉'
+                              : 'Cần thêm ${targetXp - summary.todayXp} XP để đạt mục tiêu',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -85,7 +90,7 @@ class DailyGoalCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${summary.todayXp}/$targetXp XP',
+                targetXp > 0 ? '${summary.todayXp}/$targetXp XP' : '${summary.todayXp} XP',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,

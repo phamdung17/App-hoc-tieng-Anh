@@ -16,6 +16,7 @@ class PracticeHubPage extends StatefulWidget {
 }
 
 class _PracticeHubPageState extends State<PracticeHubPage> {
+  List<Map<String, dynamic>> _savedWords = const [];
   int _savedWordsCount = 0;
   int _dueTodayCount = 0;
   bool _isLoading = true;
@@ -31,14 +32,18 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
       final words = await ScanApiService.instance.getSavedWords();
       if (mounted) {
         setState(() {
+          _savedWords = words;
           _savedWordsCount = words.length;
-          _dueTodayCount = words.isNotEmpty ? (words.length > 5 ? 5 : words.length) : 0;
+          _dueTodayCount = words.isNotEmpty
+              ? (words.length > 5 ? 5 : words.length)
+              : 0;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
+          _savedWords = const [];
           _savedWordsCount = 0;
           _dueTodayCount = 0;
           _isLoading = false;
@@ -46,28 +51,6 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
       }
     }
   }
-
-  // Giả lập câu sai gần đây (từ các bài học)
-  static const List<Map<String, String>> _wrongAnswers = [
-    {
-      'question': '"Appointment" có nghĩa là gì?',
-      'userAnswer': 'Cuộc họp',
-      'correctAnswer': 'Cuộc hẹn, cuộc gặp',
-      'lesson': 'Bài: Lịch hẹn & Sắp xếp',
-    },
-    {
-      'question': 'Điền từ còn thiếu: "Can I ___ a table for two?"',
-      'userAnswer': 'take',
-      'correctAnswer': 'book / reserve',
-      'lesson': 'Bài: Đặt bàn tại nhà hàng',
-    },
-    {
-      'question': 'Ghép cặp: "Station" — ?',
-      'userAnswer': 'Trạm xăng',
-      'correctAnswer': 'Nhà ga, bến đỗ',
-      'lesson': 'Bài: Du lịch & Giao thông',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +68,11 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
         children: [
           // ── 1. Banner ôn tập hôm nay ───────────────────────────────────
-          _DueTodayBanner(dueCount: _dueTodayCount),
+          _DueTodayBanner(
+            dueCount: _dueTodayCount,
+            isLoading: _isLoading,
+            onStart: () => context.go(AppRoutes.flashcards),
+          ),
 
           const SizedBox(height: 20),
 
@@ -152,12 +139,12 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
 
           const SizedBox(height: 28),
 
-          // ── 3. Hộp thư lỗi sai ────────────────────────────────────────
+          // ── 3. Từ đã lưu để ôn ───────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Câu sai gần đây',
+                'Từ đã lưu để ôn',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -165,13 +152,16 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${_wrongAnswers.length} câu',
+                  '$_savedWordsCount từ',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -184,24 +174,32 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
 
           const SizedBox(height: 12),
 
-          if (_wrongAnswers.isEmpty)
-            _EmptyWrongAnswers()
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_savedWords.isEmpty)
+            _EmptySavedWords(onScan: () => context.push(AppRoutes.scan))
           else
-            ..._wrongAnswers.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _WrongAnswerCard(data: item),
-                )),
+            ..._savedWords
+                .take(8)
+                .map(
+                  (word) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _SavedWordCard(word: word),
+                  ),
+                ),
 
           const SizedBox(height: 16),
 
-          if (_wrongAnswers.isNotEmpty)
+          if (_savedWords.isNotEmpty)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () =>
-                    _showComingSoon(context, 'Ôn lại tất cả câu sai'),
+                onPressed: () => context.go(AppRoutes.flashcards),
                 icon: const Icon(LucideIcons.refreshCcw, size: 18),
-                label: const Text('Ôn lại tất cả câu sai'),
+                label: const Text('Ôn lại từ đã lưu'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primary),
                   foregroundColor: AppColors.primaryDark,
@@ -232,7 +230,13 @@ class _PracticeHubPageState extends State<PracticeHubPage> {
 
 class _DueTodayBanner extends StatelessWidget {
   final int dueCount;
-  const _DueTodayBanner({required this.dueCount});
+  final bool isLoading;
+  final VoidCallback onStart;
+  const _DueTodayBanner({
+    required this.dueCount,
+    required this.isLoading,
+    required this.onStart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +273,7 @@ class _DueTodayBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$dueCount từ',
+                  isLoading ? 'Đang tải…' : '$dueCount từ',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 32,
@@ -287,10 +291,12 @@ class _DueTodayBanner extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: isLoading ? null : onStart,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primaryDark,
+              minimumSize: const Size(112, 48),
+              maximumSize: const Size(112, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.button),
               ),
@@ -337,7 +343,9 @@ class _QuickPracticeCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.card),
-            border: Border.all(color: AppColors.outline.withValues(alpha: 0.12)),
+            border: Border.all(
+              color: AppColors.outline.withValues(alpha: 0.12),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -370,10 +378,7 @@ class _QuickPracticeCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textHint,
-                ),
+                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -387,9 +392,9 @@ class _QuickPracticeCard extends StatelessWidget {
 
 // ── Widget: Thẻ câu sai ────────────────────────────────────────────────────
 
-class _WrongAnswerCard extends StatelessWidget {
-  final Map<String, String> data;
-  const _WrongAnswerCard({required this.data});
+class _SavedWordCard extends StatelessWidget {
+  final Map<String, dynamic> word;
+  const _SavedWordCard({required this.word});
 
   @override
   Widget build(BuildContext context) {
@@ -398,12 +403,10 @@ class _WrongAnswerCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(
-          color: AppColors.error.withValues(alpha: 0.18),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.error.withValues(alpha: 0.04),
+            color: AppColors.primary.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -412,7 +415,6 @@ class _WrongAnswerCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nhãn bài học
           Row(
             children: [
               const Icon(
@@ -423,7 +425,7 @@ class _WrongAnswerCard extends StatelessWidget {
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
-                  data['lesson'] ?? '',
+                  (word['pos'] as String?) ?? 'Từ vựng đã lưu',
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textHint,
@@ -435,9 +437,8 @@ class _WrongAnswerCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Câu hỏi
           Text(
-            data['question'] ?? '',
+            (word['label'] as String?) ?? 'Từ vựng',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -446,25 +447,15 @@ class _WrongAnswerCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Đáp án sai vs đúng
-          Row(
-            children: [
-              _AnswerChip(
-                label: data['userAnswer'] ?? '',
-                isCorrect: false,
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                LucideIcons.arrowRight,
-                size: 16,
-                color: AppColors.textHint,
-              ),
-              const SizedBox(width: 8),
-              _AnswerChip(
-                label: data['correctAnswer'] ?? '',
-                isCorrect: true,
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            (word['meaning_vi'] as String?)?.trim().isNotEmpty == true
+                ? word['meaning_vi'] as String
+                : 'Chạm “Flashcard” để tự kiểm tra từ này.',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -472,36 +463,12 @@ class _WrongAnswerCard extends StatelessWidget {
   }
 }
 
-class _AnswerChip extends StatelessWidget {
-  final String label;
-  final bool isCorrect;
-  const _AnswerChip({required this.label, required this.isCorrect});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isCorrect ? AppColors.success : AppColors.error;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
 // ── Widget: Trạng thái rỗng ────────────────────────────────────────────────
 
-class _EmptyWrongAnswers extends StatelessWidget {
+class _EmptySavedWords extends StatelessWidget {
+  final VoidCallback onScan;
+  const _EmptySavedWords({required this.onScan});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -520,7 +487,7 @@ class _EmptyWrongAnswers extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Tuyệt vời! Không có câu sai nào.',
+            'Chưa có từ nào trong danh sách ôn tập.',
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -528,12 +495,17 @@ class _EmptyWrongAnswers extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Hãy tiếp tục học thêm bài mới nhé.',
+            'Quét ảnh và lưu từ mới, chúng sẽ xuất hiện ở đây.',
             style: TextStyle(color: AppColors.textHint, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: onScan,
+            icon: const Icon(LucideIcons.camera),
+            label: const Text('Quét từ mới'),
           ),
         ],
       ),
     );
   }
 }
-

@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/learning_repository.dart';
-import '../../data/mock_learning_repository.dart';
 import '../../domain/lesson_models.dart';
+import '../../../progress/data/progress_repository.dart';
+import '../../../progress/domain/progress_models.dart';
 import '../widgets/unit_lesson_node.dart';
 
 class LearningPathPage extends StatefulWidget {
@@ -20,6 +21,8 @@ class _LearningPathPageState extends State<LearningPathPage> {
   final _repository = LearningRepository.instance;
   List<LearningUnit> _units = [];
   bool _isLoading = true;
+  String? _loadError;
+  ProgressSummary? _summary;
 
   @override
   void initState() {
@@ -28,7 +31,10 @@ class _LearningPathPageState extends State<LearningPathPage> {
   }
 
   Future<void> _loadUnits() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
     try {
       final units = await _repository.getUnits();
       if (mounted) {
@@ -37,10 +43,17 @@ class _LearningPathPageState extends State<LearningPathPage> {
           _isLoading = false;
         });
       }
+      try {
+        final summary = await ProgressRepository.instance.getSummary();
+        if (mounted) setState(() => _summary = summary);
+      } catch (_) {
+        if (mounted) setState(() => _summary = null);
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _units = MockLearningRepository.instance.getUnits();
+          _units = [];
+          _loadError = 'Không tải được lộ trình học. Kiểm tra kết nối và thử lại.';
           _isLoading = false;
         });
       }
@@ -196,9 +209,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
 
   @override
   Widget build(BuildContext context) {
-    final units = _units.isNotEmpty
-        ? _units
-        : MockLearningRepository.instance.getUnits();
+    final units = _units;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -229,7 +240,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${_repository.userStreak} ngày',
+                      '${_summary?.streakDays ?? '—'} ngày',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -262,7 +273,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
                     ),
                     const SizedBox(width: 2),
                     Text(
-                      '${_repository.userXp} XP',
+                      '${_summary?.xpTotal ?? '—'} XP',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -301,6 +312,26 @@ class _LearningPathPageState extends State<LearningPathPage> {
       ),
       body: _isLoading && _units.isEmpty
           ? const Center(child: CircularProgressIndicator())
+          : _loadError != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(LucideIcons.cloudOff, size: 44, color: AppColors.textHint),
+                        const SizedBox(height: 12),
+                        Text(_loadError!, textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: _loadUnits,
+                          icon: const Icon(LucideIcons.refreshCw, size: 16),
+                          label: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
           : RefreshIndicator(
               onRefresh: _loadUnits,
               child: SingleChildScrollView(
@@ -352,7 +383,9 @@ class _LearningPathPageState extends State<LearningPathPage> {
                             ],
                           ),
                           Text(
-                            '${_repository.todayXpEarned}/${_repository.dailyGoalXp} XP',
+                            _summary == null
+                                ? '— XP'
+                                : '${_summary!.todayXp}/${_summary!.dailyGoalXp} XP',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -365,9 +398,9 @@ class _LearningPathPageState extends State<LearningPathPage> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
-                          value:
-                              (_repository.todayXpEarned /
-                                      _repository.dailyGoalXp)
+                          value: _summary == null || _summary!.dailyGoalXp <= 0
+                              ? 0
+                              : (_summary!.todayXp / _summary!.dailyGoalXp)
                                   .clamp(0.0, 1.0),
                           minHeight: 10,
                           backgroundColor: AppColors.surfaceVariant,

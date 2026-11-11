@@ -141,24 +141,10 @@ class ScanService:
             status="ok",
             items_data=items_with_word_ids,
         )
-        # TODO: tăng quota Redis sau khi lưu thành công
-        # await self._increment_quota(user_id)
+        # The router keeps the Redis reservation only after the DB commit succeeds.
 
         # ── Xây dựng response ─────────────────────────────────────────────
         return self._build_response(scan, image_url)
-
-    async def get_quota(self, user_id: uuid.UUID) -> dict:
-        """Trả về quota scan hiện tại của user (từ Redis)."""
-        # TODO: đọc từ Redis
-        # used = await self._redis.get(f"scan_quota:{user_id}:{today()}")
-        limit = settings.SCAN_QUOTA_PER_USER_DAILY
-        used = 0   # placeholder
-        return {
-            "used": used,
-            "limit": limit,
-            "remaining": max(0, limit - used),
-            "reset_at": _midnight_utc_iso(),
-        }
 
     # ── Private Helpers ───────────────────────────────────────────────────
 
@@ -355,7 +341,14 @@ class ScanService:
                 bbox_w=bbox_w,
                 bbox_h=bbox_h,
             )
+            # `Scan.items` uses lazy="noload". Keep the in-memory collection
+            # populated so `_build_response` can return the items just created.
+            scan.items.append(item)
             self._db.add(item)
+
+        # Generate ScanItem IDs and persist them in the current transaction
+        # before `_build_response` serializes the in-memory relationship.
+        await self._db.flush()
 
         # commit sẽ được gọi bởi get_db() dependency sau khi return
         return scan
@@ -394,15 +387,3 @@ class ScanService:
             object_count=scan.object_count,
             created_at=scan.created_at,
         )
-
-
-# ── Utility ───────────────────────────────────────────────────────────────────
-
-def _midnight_utc_iso() -> str:
-    """Trả về ISO 8601 string của nửa đêm UTC hôm nay (thời điểm reset quota)."""
-    now = datetime.now(timezone.utc)
-    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    # Ngày mai
-    from datetime import timedelta
-    next_midnight = midnight + timedelta(days=1)
-    return next_midnight.isoformat()

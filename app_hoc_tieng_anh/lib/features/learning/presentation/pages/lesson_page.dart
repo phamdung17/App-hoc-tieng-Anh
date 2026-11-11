@@ -6,7 +6,6 @@ import 'dart:async';
 import '../../../../core/audio/app_sound_effects.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/learning_repository.dart';
-import '../../data/mock_learning_repository.dart';
 import '../../domain/exercise_models.dart';
 import '../../domain/lesson_models.dart';
 import '../exercises/image_choice_exercise_widget.dart';
@@ -32,6 +31,8 @@ class _LessonPageState extends State<LessonPage> {
   List<Exercise> _exerciseQueue = [];
   int _totalOriginalCount = 0;
   bool _isLoading = true;
+  String? _loadError;
+  bool _isSubmitting = false;
 
   int _currentIndex = 0;
   int _correctCount = 0;
@@ -57,30 +58,22 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   Future<void> _loadLesson() async {
+    setState(() { _isLoading = true; _loadError = null; });
     try {
-      final detail = await LearningRepository.instance.getLessonDetail(
-        widget.lessonId,
-      );
-      if (mounted) {
-        setState(() {
-          _lessonDetail = detail;
-          _exerciseQueue = List.from(detail.exercises);
-          _totalOriginalCount = _exerciseQueue.length;
-          _isLoading = false;
-        });
-      }
+      final detail = await LearningRepository.instance.getLessonDetail(widget.lessonId);
+      if (!mounted) return;
+      setState(() {
+        _lessonDetail = detail;
+        _exerciseQueue = List.from(detail.exercises);
+        _totalOriginalCount = _exerciseQueue.length;
+        _isLoading = false;
+      });
     } catch (_) {
-      if (mounted) {
-        final detail = MockLearningRepository.instance.getLessonDetail(
-          widget.lessonId,
-        );
-        setState(() {
-          _lessonDetail = detail;
-          _exerciseQueue = List.from(detail.exercises);
-          _totalOriginalCount = _exerciseQueue.length;
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _loadError = 'Không tải được nội dung bài học. Kiểm tra kết nối rồi thử lại.';
+        _isLoading = false;
+      });
     }
   }
 
@@ -188,6 +181,8 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   Future<void> _finishLesson() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
     unawaited(AppSoundEffects.instance.play(AppSoundEffect.lessonComplete));
     final durationSeconds = DateTime.now().difference(_startTime).inSeconds;
     final accuracy = _attemptsCount > 0
@@ -196,33 +191,41 @@ class _LessonPageState extends State<LessonPage> {
 
     final score = accuracy.clamp(0, 100);
 
-    final submitResult = await LearningRepository.instance.submitLesson(
-      lessonId: widget.lessonId,
-      score: score,
-      timeSpentSeconds: durationSeconds,
-      xpReward: _lessonDetail.xpReward,
-    );
+    try {
+      final submitResult = await LearningRepository.instance.submitLesson(
+        lessonId: widget.lessonId,
+        score: score,
+        timeSpentSeconds: durationSeconds,
+      );
 
-    final xpEarned = submitResult['xp_earned'] is num
-        ? (submitResult['xp_earned'] as num).toInt()
-        : _lessonDetail.xpReward;
-    final streakDays = submitResult['streak_days'] is num
-        ? (submitResult['streak_days'] as num).toInt()
-        : LearningRepository.instance.userStreak;
+      final xpValue = submitResult['xp_earned'];
+      final streakValue = submitResult['streak_days'];
+      if (xpValue is! num || streakValue is! num) {
+        throw const FormatException('Phản hồi kết quả bài học không hợp lệ.');
+      }
+      final xpEarned = xpValue.toInt();
+      final streakDays = streakValue.toInt();
 
-    final result = LessonResult(
-      lessonId: widget.lessonId,
-      lessonTitle: _lessonDetail.title,
-      xpEarned: xpEarned,
-      accuracyPercentage: accuracy.clamp(0, 100),
-      totalQuestions: _totalOriginalCount,
-      correctCount: _correctCount,
-      durationSeconds: durationSeconds,
-      streakDays: streakDays,
-    );
+      final result = LessonResult(
+        lessonId: widget.lessonId,
+        lessonTitle: _lessonDetail.title,
+        xpEarned: xpEarned,
+        accuracyPercentage: accuracy.clamp(0, 100),
+        totalQuestions: _totalOriginalCount,
+        correctCount: _correctCount,
+        durationSeconds: durationSeconds,
+        streakDays: streakDays,
+      );
 
-    if (mounted) {
-      context.go('/lesson-result', extra: result);
+      if (mounted) {
+        context.go('/lesson-result', extra: result);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chưa gửi được kết quả lên máy chủ. Hãy nhấn Tiếp tục để thử lại.')),
+      );
     }
   }
 
@@ -237,8 +240,32 @@ class _LessonPageState extends State<LessonPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _exerciseQueue.isEmpty) {
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_loadError != null || _exerciseQueue.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _loadError ?? 'Bài học này chưa có nội dung.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: _loadLesson,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final currentExercise = _exerciseQueue[_currentIndex];

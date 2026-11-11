@@ -59,6 +59,8 @@ class _ProgressPageState extends State<ProgressPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
+          _summary = null;
+          _calendar = null;
           _errorMessage = 'Không thể tải dữ liệu tiến độ. Vui lòng thử lại!';
           _isLoading = false;
         });

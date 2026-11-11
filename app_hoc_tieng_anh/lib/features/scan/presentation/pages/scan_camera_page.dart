@@ -85,6 +85,8 @@ class _ScanCameraPageState extends State<ScanCameraPage>
           ? 'Đăng nhập để sử dụng AI Scan.'
           : status == 429
           ? 'Bạn đã dùng hết lượt quét hôm nay.'
+          : status == 503 || code == 'AI_TEMPORARILY_UNAVAILABLE'
+          ? 'Dịch vụ AI đang tạm thời bận. Hãy thử quét lại sau một chút.'
           : 'Không thể phân tích ảnh. Kiểm tra kết nối rồi thử lại.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),

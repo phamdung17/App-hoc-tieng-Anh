@@ -33,6 +33,8 @@ class ScanApiService {
       data: FormData.fromMap({
         'image': await MultipartFile.fromFile(path),
       }),
+      // Backend AI calls can use its full 30s provider timeout plus cleanup.
+      options: Options(receiveTimeout: const Duration(seconds: 45)),
     );
     final data = response.data ?? const <String, dynamic>{};
     final items = (data['items'] as List<dynamic>? ?? const [])

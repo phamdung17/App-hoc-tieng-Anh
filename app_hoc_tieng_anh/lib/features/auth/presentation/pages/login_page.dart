@@ -598,9 +598,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } on GoogleAuthException catch (e) {
       if (!mounted) return;
       _showMessage(e.message);
-    } catch (_) {
+    } on DioException catch (error) {
       if (!mounted) return;
-      _showMessage('Đăng nhập Google thất bại. Vui lòng thử lại.');
+      _showMessage(_messageForDioError(error));
+    } on PlatformException catch (error) {
+      if (!mounted) return;
+      final details = error.message ?? 'Kiểm tra cấu hình OAuth Android.';
+      _showMessage('Google Sign-In lỗi (${error.code}): $details');
+    } catch (error) {
+      if (!mounted) return;
+      _showMessage('Google Sign-In lỗi [${error.runtimeType}]: $error');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

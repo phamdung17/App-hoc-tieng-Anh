@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app_hoc_tieng_anh/features/learning/data/learning_repository.dart';
-import 'package:app_hoc_tieng_anh/features/learning/data/mock_learning_repository.dart';
 import 'package:app_hoc_tieng_anh/features/learning/domain/exercise_models.dart';
-import 'package:app_hoc_tieng_anh/features/learning/domain/lesson_models.dart';
 
 void main() {
   group('LearningRepository UUID & Fallback Detection Tests', () {
@@ -15,38 +13,29 @@ void main() {
       expect(LearningRepository.isUuid('12345'), isFalse);
     });
 
-    test('getLessonDetail for mock ID returns mock data without crash', () async {
+    test('getLessonDetail rejects mock IDs instead of substituting mock data', () async {
       final repository = LearningRepository.instance;
-      final detail = await repository.getLessonDetail('unit1_lesson2');
-      expect(detail.id, 'unit1_lesson2');
-      expect(detail.title, isNotEmpty);
-      expect(detail.exercises, isNotEmpty);
-      expect(detail.exercises.length, greaterThanOrEqualTo(3));
-    });
-
-    test('getUnits returns non-empty list of units with lessons', () async {
-      final repository = LearningRepository.instance;
-      final units = await repository.getUnits();
-      expect(units, isNotEmpty);
-      expect(units.first.lessons, isNotEmpty);
-      expect(units.first.number, 1);
-    });
-
-    test('submitLesson for mock ID completes lesson and returns valid result', () async {
-      final repository = LearningRepository.instance;
-      final initialStreak = repository.userStreak;
-
-      final result = await repository.submitLesson(
-        lessonId: 'unit1_lesson1',
-        score: 90,
-        timeSpentSeconds: 45,
-        xpReward: 15,
+      await expectLater(
+        repository.getLessonDetail('unit1_lesson2'),
+        throwsA(isA<FormatException>()),
       );
+    });
 
-      expect(result['lesson_status'], 'completed');
-      expect(result['xp_earned'], 15);
-      expect(result['streak_days'], initialStreak);
-      expect(result['is_offline'], isTrue);
+    test('getUnits reports backend errors instead of returning mock units', () async {
+      final repository = LearningRepository.instance;
+      await expectLater(repository.getUnits(), throwsA(anything));
+    });
+
+    test('submitLesson rejects mock IDs instead of recording fake progress', () async {
+      final repository = LearningRepository.instance;
+      await expectLater(
+        repository.submitLesson(
+          lessonId: 'unit1_lesson1',
+          score: 90,
+          timeSpentSeconds: 45,
+        ),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 

@@ -44,16 +44,6 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-class VerifyEmailRequest(BaseModel):
-    """POST /auth/verify-email"""
-    token: str
-
-
-class ResendVerifyRequest(BaseModel):
-    """POST /auth/resend-verify"""
-    email: EmailStr
-
-
 class SocialGoogleRequest(BaseModel):
     """POST /auth/social/google"""
     id_token: str

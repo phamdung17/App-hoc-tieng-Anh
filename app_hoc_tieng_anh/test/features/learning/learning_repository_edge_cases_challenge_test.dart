@@ -20,7 +20,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app_hoc_tieng_anh/core/network/app_api.dart';
 import 'package:app_hoc_tieng_anh/features/learning/data/learning_repository.dart';
-import 'package:app_hoc_tieng_anh/features/learning/domain/lesson_models.dart';
 
 class ConfigurableMockAdapter implements HttpClientAdapter {
   final Future<ResponseBody> Function(RequestOptions options) responseProvider;
@@ -81,7 +80,6 @@ void main() {
         lessonId: sampleUuid,
         score: 100,
         timeSpentSeconds: 60,
-        xpReward: 20,
       );
       expect(submitResult['is_offline'], isTrue);
       expect(submitResult['lesson_status'], equals('completed'));
@@ -106,7 +104,6 @@ void main() {
         lessonId: sampleUuid,
         score: 90,
         timeSpentSeconds: 45,
-        xpReward: 15,
       );
       expect(submitResult['is_offline'], isTrue);
     });
@@ -130,7 +127,6 @@ void main() {
         lessonId: sampleUuid,
         score: 85,
         timeSpentSeconds: 50,
-        xpReward: 20,
       );
       expect(submitResult['is_offline'], isTrue);
     });
@@ -159,7 +155,6 @@ void main() {
         lessonId: sampleUuid,
         score: 75,
         timeSpentSeconds: 30,
-        xpReward: 10,
       );
       expect(submitResult['is_offline'], isTrue);
     });
@@ -188,7 +183,6 @@ void main() {
         lessonId: sampleUuid,
         score: 95,
         timeSpentSeconds: 120,
-        xpReward: 25,
       );
       expect(submitResult['is_offline'], isTrue);
     });
@@ -212,7 +206,6 @@ void main() {
         lessonId: sampleUuid,
         score: 80,
         timeSpentSeconds: 70,
-        xpReward: 15,
       );
       expect(submitResult['is_offline'], isTrue);
     });

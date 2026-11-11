@@ -94,7 +94,7 @@ async def check_scan_quota(
 async def reserve_scan_quota(
     user_id: uuid.UUID,
     redis: "Redis",
-) -> None:
+) -> str:
     """
     Tạm giữ 1 lượt scan (increment). Gọi trước khi call Gemini.
     Nếu vượt limit → decrement lại + raise 429.
@@ -102,19 +102,28 @@ async def reserve_scan_quota(
     Raises:
         HTTPException 429 SCAN_LIMIT_REACHED
     """
-    key = _quota_key(user_id, _today_utc())
+    date_str = _today_utc()
+    key = _quota_key(user_id, date_str)
     limit = settings.SCAN_QUOTA_PER_USER_DAILY
 
-    # Atomic increment
-    count = await redis.incr(key)
+    # Increment, attach expiration, and enforce the limit as one Redis operation.
+    count = await redis.eval(
+        """
+        local count = redis.call('INCR', KEYS[1])
+        if count == 1 then redis.call('EXPIREAT', KEYS[1], ARGV[1]) end
+        if count > tonumber(ARGV[2]) then
+            redis.call('DECR', KEYS[1])
+            return -1
+        end
+        return count
+        """,
+        1,
+        key,
+        _next_midnight_timestamp(),
+        limit,
+    )
 
-    # Set TTL chỉ lần đầu trong ngày (count == 1)
-    if count == 1:
-        await redis.expireat(key, _next_midnight_timestamp())
-
-    if count > limit:
-        # Vượt quota → hoàn trả slot
-        await redis.decr(key)
+    if int(count) < 0:
         used = limit
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -126,21 +135,29 @@ async def reserve_scan_quota(
                 "reset_at": _next_midnight_iso(),
             },
         )
+    return key
 
 
 async def release_scan_quota(
     user_id: uuid.UUID,
     redis: "Redis",
+    key: str | None = None,
 ) -> None:
     """
     Hoàn trả 1 lượt scan đã reserve khi scan thất bại.
     Gọi trong except block của scan service khi Gemini lỗi / ảnh invalid.
     """
-    key = _quota_key(user_id, _today_utc())
-    # Đảm bảo không xuống dưới 0
-    current = await redis.get(key)
-    if current and int(current) > 0:
-        await redis.decr(key)
+    key = key or _quota_key(user_id, _today_utc())
+    # Atomic decrement; never let concurrent rollbacks make the count negative.
+    await redis.eval(
+        """
+        local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+        if current > 0 then return redis.call('DECR', KEYS[1]) end
+        return 0
+        """,
+        1,
+        key,
+    )
 
 
 async def get_quota_info(
