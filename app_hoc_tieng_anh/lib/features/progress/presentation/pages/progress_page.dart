@@ -128,6 +128,8 @@ class _ProgressPageState extends State<ProgressPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
+                  minimumSize: const Size(140, 48),
+                  maximumSize: const Size(220, 48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -221,6 +223,8 @@ class _ProgressPageState extends State<ProgressPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
+                      minimumSize: const Size(96, 44),
+                      maximumSize: const Size(132, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

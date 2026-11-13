@@ -15,11 +15,7 @@ class CalendarHeatmap extends StatelessWidget {
   final List<DailySummary> days;
   final ValueChanged<DailySummary>? onDaySelected;
 
-  const CalendarHeatmap({
-    super.key,
-    required this.days,
-    this.onDaySelected,
-  });
+  const CalendarHeatmap({super.key, required this.days, this.onDaySelected});
 
   Color _getCellColor(int xp) {
     if (xp <= 0) return const Color(0xFFE8ECEB);
@@ -30,7 +26,8 @@ class CalendarHeatmap extends StatelessWidget {
 
   void _showDayDetails(BuildContext context, DailySummary day) {
     final now = DateTime.now();
-    final isToday = day.date.year == now.year &&
+    final isToday =
+        day.date.year == now.year &&
         day.date.month == now.month &&
         day.date.day == now.day;
 
@@ -191,15 +188,19 @@ class CalendarHeatmap extends StatelessWidget {
                 color: AppColors.primaryDark,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Lịch sử học tập (30 ngày)',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+              const Expanded(
+                child: Text(
+                  'Lịch sử học tập (30 ngày)',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 '${days.where((d) => d.hasActivity).length} ngày đã học',
                 style: const TextStyle(
@@ -216,8 +217,11 @@ class CalendarHeatmap extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               const columns = 7;
-              final cellSize = ((constraints.maxWidth - (columns - 1) * 8) / columns)
-                  .clamp(28.0, 44.0);
+              final cellSize =
+                  ((constraints.maxWidth - (columns - 1) * 8) / columns).clamp(
+                    28.0,
+                    44.0,
+                  );
 
               // Danh sách thứ trong tuần
               const weekLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -249,7 +253,8 @@ class CalendarHeatmap extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: sortedDays.map((day) {
-                      final isToday = day.date.year == now.year &&
+                      final isToday =
+                          day.date.year == now.year &&
                           day.date.month == now.month &&
                           day.date.day == now.day;
 
@@ -268,10 +273,7 @@ class CalendarHeatmap extends StatelessWidget {
                             color: _getCellColor(day.xpEarned),
                             borderRadius: BorderRadius.circular(8),
                             border: isToday
-                                ? Border.all(
-                                    color: AppColors.coral,
-                                    width: 2,
-                                  )
+                                ? Border.all(color: AppColors.coral, width: 2)
                                 : Border.all(
                                     color: Colors.black.withValues(alpha: 0.04),
                                   ),
@@ -284,13 +286,13 @@ class CalendarHeatmap extends StatelessWidget {
                                 fontWeight: isToday
                                     ? FontWeight.w900
                                     : (day.hasActivity
-                                        ? FontWeight.w700
-                                        : FontWeight.w500),
+                                          ? FontWeight.w700
+                                          : FontWeight.w500),
                                 color: day.xpEarned >= 25
                                     ? Colors.white
                                     : (day.hasActivity
-                                        ? AppColors.textPrimary
-                                        : AppColors.textHint),
+                                          ? AppColors.textPrimary
+                                          : AppColors.textHint),
                               ),
                             ),
                           ),
@@ -381,13 +383,9 @@ class _DetailStatItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
         ),
       ],
     );
   }
 }
-

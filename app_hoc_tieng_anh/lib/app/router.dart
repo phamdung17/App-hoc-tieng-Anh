@@ -51,7 +51,7 @@ class AppRoutes {
   static const wordDetail = '/word/:id';
   static const lessonDetail = '/lesson/:id';
   static const lessonResult = '/lesson-result';
-  static const progress = '/progress';
+  static const progress = '/home/progress';
 }
 
 // ── Auth-route helper ─────────────────────────────────────────────────────────
@@ -195,13 +195,6 @@ GoRouter createRouter(Ref ref) {
         },
       ),
 
-      // Progress & Streak Calendar
-      GoRoute(
-        path: AppRoutes.progress,
-        name: 'progress',
-        builder: (context, state) => const ProgressPage(),
-      ),
-
       // Home shell với 4 tabs
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
@@ -226,6 +219,11 @@ GoRouter createRouter(Ref ref) {
             name: 'profile',
             builder: (context, state) => const ProfilePage(),
           ),
+          GoRoute(
+            path: AppRoutes.progress,
+            name: 'progress',
+            builder: (context, state) => const ProgressPage(),
+          ),
         ],
       ),
     ],
@@ -247,7 +245,10 @@ class MainShell extends StatelessWidget {
     if (location.startsWith(AppRoutes.learning)) return 0;
     if (location.startsWith(AppRoutes.vocabulary)) return 1;
     if (location.startsWith(AppRoutes.review)) return 2;
-    if (location.startsWith(AppRoutes.profile)) return 3;
+    if (location.startsWith(AppRoutes.profile) ||
+        location.startsWith(AppRoutes.progress)) {
+      return 3;
+    }
     return 0;
   }
 
